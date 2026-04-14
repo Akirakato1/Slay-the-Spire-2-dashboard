@@ -1,0 +1,34 @@
+{
+  "name": "sts2-stats",
+  "version": "1.0.0",
+  "description": "Slay the Spire 2 Run Statistics Dashboard",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  },
+  "build": {
+    "appId": "com.sts2stats.app",
+    "productName": "STS2 Stats",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "STS2S.ico"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
