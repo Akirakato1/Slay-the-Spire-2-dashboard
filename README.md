@@ -178,6 +178,7 @@ All cards in the final deck, displayed as a grid of card images.
 ### Copy Run File
 
 A **Copy File** button in the run detail view copies the `.run` file itself to the Windows clipboard, so you can paste it into a folder or share it.
+Pastebin copy/open pastebin .run file are available. First time using pastebin functionality, will prompt for your free pastebin api key. 
 
 ---
 
