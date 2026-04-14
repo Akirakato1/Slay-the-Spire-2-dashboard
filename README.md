@@ -1,4 +1,4 @@
-# STS2 Stats
+# STS2 Dashboard
 
 A desktop statistics dashboard for **Slay the Spire 2** run history. Built with Electron — no browser or Python required.
 
