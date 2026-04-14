@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+  <title>STS2 Stats — Setup</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(ellipse at center, #1e2a4a 0%, #1a1a2e 70%);
+    }
+
+    .setup-container {
+      width: 100%;
+      max-width: 540px;
+      text-align: center;
+    }
+
+    .logo {
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      font-size: 4rem;
+      line-height: 1;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 20px rgba(201,162,39,0.5));
+    }
+
+    .logo h1 {
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 30px rgba(201,162,39,0.4);
+    }
+
+    .logo p {
+      color: var(--text-secondary);
+      margin-top: 6px;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    hr.gold-line { margin: 28px 0; }
+
+    .setup-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      text-align: left;
+    }
+
+    .setup-card h2 {
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .setup-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .folder-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .folder-display {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
+
+    .folder-display.has-path {
+      color: var(--gold-light);
+    }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .hint code {
+      background: var(--bg-primary);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--gold-dim);
+      font-size: 0.8rem;
+    }
+
+    .action-row {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    #continueBtn {
+      display: none;
+      font-size: 1rem;
+      padding: 10px 28px;
+    }
+
+    #continueBtn.visible {
+      display: inline-flex;
+    }
+
+    .status-msg {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      display: none;
+    }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: rgba(46,204,113,0.1); color: var(--green); border: 1px solid rgba(46,204,113,0.2); }
+    .status-msg.error   { background: rgba(139,0,0,0.1);    color: #e74c3c;      border: 1px solid rgba(139,0,0,0.2); }
+  </style>
+</head>
+<body>
+  <div class="setup-container">
+
+    <div class="logo">
+      <img class="logo-icon" src="../Slay_the_Spire_2_icon.webp" alt="STS2" style="width:12rem;height:12rem;object-fit:contain;" />
+      <h1>STS2 Stats</h1>
+      <p>Slay the Spire 2 — Run Statistics</p>
+    </div>
+
+    <hr class="gold-line" />
+
+    <div class="setup-card">
+      <h2>Welcome! Let's get started.</h2>
+      <p>
+        Point this app at the folder where Slay the Spire 2 saves your run history files (<code>.run</code>).
+        The app will watch that folder and keep your stats up to date automatically.
+      </p>
+
+      <div class="folder-row">
+        <div class="folder-display" id="folderDisplay">No folder selected</div>
+        <button class="btn btn-secondary" id="browseBtn">Browse…</button>
+      </div>
+
+      <p class="hint">
+        Typical location (Windows):<br>
+        <code>%APPDATA%\Roaming\SlayTheSpire2\Steam\&lt;SteamID&gt;\Profile\History</code>
+      </p>
+
+      <hr class="gold-line" style="margin: 20px 0;" />
+
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:6px;">App data &amp; assets are stored at:</p>
+      <p class="hint" style="margin-top:0;"><code id="assetsPathDisplay">…</code></p>
+
+      <div class="status-msg" id="statusMsg"></div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" id="continueBtn">Continue to Dashboard</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="setup.js"></script>
+</body>
+</html>

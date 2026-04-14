@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' appdata:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' appdata: data:;" />
+  <title>STS2 Stats — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border-gold);
+      flex-shrink: 0;
+      gap: 16px;
+    }
+    .header-left  { display: flex; align-items: center; gap: 12px; }
+    .header-icon  { font-size: 1.5rem; }
+    .header-title { font-size: 1.25rem; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; }
+    .header-folder {
+      font-size: 0.75rem; color: var(--text-muted);
+      font-family: 'Courier New', monospace;
+      max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      margin-top: 2px;
+    }
+    .header-folder-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.72rem; color: var(--text-muted);
+      text-decoration: underline; text-underline-offset: 2px;
+      padding: 0; line-height: 1.4;
+      transition: color 0.15s;
+    }
+    .header-folder-btn:hover { color: var(--gold); }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .open-run-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-sm);
+      min-width: 160px;
+      z-index: 500;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .open-run-menu-item {
+      display: block;
+      width: 100%;
+      padding: 9px 14px;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .open-run-menu-item:hover { background: var(--bg-hover); }
+    .refresh-indicator { font-size: 0.75rem; color: var(--green); opacity: 0; transition: opacity 0.3s; }
+    .refresh-indicator.show { opacity: 1; }
+
+    /* ── Scroll areas ────────────────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px 32px;
+    }
+
+    /* ── Summary stat cards ──────────────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--gold-dim); }
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red   { color: #e74c3c; }
+    .stat-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── Two-column section ──────────────────────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Data tables ─────────────────────────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .data-table th {
+      text-align: left; padding: 8px 10px; color: var(--text-muted);
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td { padding: 9px 10px; border-bottom: 1px solid rgba(42,58,92,0.5); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .char-name { font-weight: 600; }
+
+    .win-rate-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .win-rate-bar { flex: 1; height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden; }
+    .win-rate-fill { height: 100%; background: linear-gradient(90deg, var(--green-dim), var(--green)); border-radius: 3px; transition: width 0.4s ease; }
+    .win-rate-pct { font-size: 0.8rem; color: var(--green); min-width: 36px; }
+
+    /* ── Death causes ────────────────────────────────────────────────────── */
+    .death-list { list-style: none; }
+    .death-list li { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(42,58,92,0.5); gap: 10px; }
+    .death-list li:last-child { border-bottom: none; }
+    .death-bar-wrap { flex: 1; height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden; }
+    .death-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red-dim), var(--red-light)); border-radius: 3px; }
+    .death-name { font-size: 0.875rem; min-width: 130px; }
+    .death-count { font-size: 0.8rem; color: var(--text-muted); min-width: 30px; text-align: right; }
+
+    /* ── Ascension chart ─────────────────────────────────────────────────── */
+    .asc-bars { display: flex; flex-direction: column; gap: 8px; }
+    .asc-row { display: grid; grid-template-columns: 60px 1fr 36px; align-items: center; gap: 10px; font-size: 0.8rem; }
+    .asc-label { color: var(--text-secondary); text-align: right; }
+    .asc-bar-wrap { height: 10px; background: var(--bg-primary); border-radius: 5px; overflow: hidden; }
+    .asc-bar-fill { height: 100%; background: linear-gradient(90deg, var(--bg-card), var(--gold-dim)); border-radius: 5px; transition: width 0.4s ease; }
+    .asc-count { color: var(--text-muted); }
+
+    /* ── Runs table ──────────────────────────────────────────────────────── */
+    .runs-section { margin-top: 0; }
+    .runs-table { font-size: 0.85rem; }
+    .runs-table th { font-size: 0.72rem; }
+    .runs-table .col-char   { min-width: 120px; }
+    .runs-table .col-asc    { width: 50px; text-align: center; }
+    .runs-table .col-result { width: 90px; }
+    .runs-table .col-date   { width: 120px; }
+    .runs-table .col-death  { }
+    .runs-table .col-dur    { width: 80px; text-align: right; }
+    .runs-table .col-counts { width: 80px; text-align: right; }
+    .runs-table .col-arrow  { width: 24px; text-align: center; color: var(--text-muted); }
+    td.col-asc { text-align: center; }
+
+    .run-char  { font-weight: 600; color: var(--text-primary); }
+    .run-date  { color: var(--text-muted); font-size: 0.8rem; }
+    .run-death { color: var(--text-secondary); font-style: italic; }
+    .run-dur   { color: var(--text-muted); font-size: 0.8rem; }
+    .run-counts { font-size: 0.75rem; color: var(--text-muted); }
+
+    .run-row { cursor: pointer; transition: background 0.12s; }
+    .run-row:hover td { background: rgba(201,162,39,0.07) !important; }
+    .run-row:hover .col-arrow { color: var(--gold); }
+
+    /* ── Pagination ──────────────────────────────────────────────────────── */
+    .page-btn {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text-primary); font-size: 1rem; line-height: 1;
+      width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s; padding: 0;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--gold-dim); }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+    .page-info { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+
+    /* ── Filter bar ─────────────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 20px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 20px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 140px; }
+    .filter-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); white-space: nowrap; }
+    .filter-select {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text-primary); font-size: 0.85rem; padding: 5px 8px; cursor: pointer; outline: none;
+    }
+    .filter-select:focus { border-color: var(--gold-dim); }
+    .filter-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 4px; border-radius: 2px; background: var(--bg-card); outline: none; cursor: pointer;
+    }
+    .filter-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--gold); cursor: pointer; transition: background 0.15s;
+    }
+    .filter-slider::-webkit-slider-thumb:hover { background: var(--gold-light); }
+    .filter-checks { display: flex; flex-direction: column; gap: 5px; }
+    .check-label { display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; user-select: none; }
+    .check-label input[type="checkbox"] { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
+    .filter-divider { width: 1px; height: 48px; background: var(--border); align-self: center; }
+
+    /* ── Mode toggle ─────────────────────────────────────────────────────── */
+    .mode-toggle {
+      display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .mode-toggle-btn {
+      flex: 1; padding: 5px 12px; background: var(--bg-card); border: none; border-right: 1px solid var(--border);
+      color: var(--text-muted); font-size: 0.82rem; cursor: pointer; white-space: nowrap; transition: background 0.12s, color 0.12s;
+    }
+    .mode-toggle-btn:last-child { border-right: none; }
+    .mode-toggle-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .mode-toggle-btn.active { background: rgba(212,175,55,0.15); color: var(--gold); font-weight: 600; }
+
+    /* ── Coop badge in run list ──────────────────────────────────────────── */
+    .coop-badge {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+      background: rgba(74,159,212,0.18); color: #4a9fd4;
+      border: 1px solid rgba(74,159,212,0.35); border-radius: 3px;
+      padding: 1px 4px; vertical-align: middle; margin-left: 4px;
+    }
+
+    /* ── Player tabs in detail view ──────────────────────────────────────── */
+    .detail-player-tabs {
+      display: flex; gap: 0; border-bottom: 2px solid var(--border);
+      margin-bottom: -2px;
+    }
+    .player-tab-btn {
+      padding: 8px 20px; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-muted); font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      margin-bottom: -2px; transition: color 0.12s, border-color 0.12s;
+    }
+    .player-tab-btn:hover { color: var(--text-primary); }
+    .player-tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── Ascension multi-select filter ──────────────────────────────────── */
+    .asc-filter-wrap { position: relative; }
+    .asc-filter-btn {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text-primary); font-size: 0.85rem; padding: 5px 10px 5px 8px;
+      cursor: pointer; outline: none; font-family: inherit; white-space: nowrap;
+      display: flex; align-items: center; gap: 6px; min-width: 100px;
+      transition: border-color 0.15s;
+    }
+    .asc-filter-btn:focus, .asc-filter-btn:hover { border-color: var(--gold-dim); }
+    .asc-filter-btn::after { content: '▾'; font-size: 0.65rem; opacity: 0.5; margin-left: auto; }
+    .asc-filter-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 160px; z-index: 400;
+      background: var(--bg-secondary); border: 1px solid var(--border-gold);
+      border-radius: var(--radius-sm); box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+      overflow: hidden;
+    }
+    .asc-filter-ctrl { display: flex; border-bottom: 1px solid var(--border); }
+    .asc-ctrl-btn {
+      flex: 1; padding: 6px 0; font-size: 0.72rem; background: none; border: none;
+      color: var(--text-muted); cursor: pointer; font-family: inherit;
+      transition: background 0.1s, color 0.1s;
+    }
+    .asc-ctrl-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .asc-ctrl-btn + .asc-ctrl-btn { border-left: 1px solid var(--border); }
+    .asc-checkbox-list { max-height: 220px; overflow-y: auto; padding: 3px 0; }
+    .asc-checkbox-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 12px; cursor: pointer; user-select: none;
+      font-size: 0.82rem; color: var(--text-secondary);
+      transition: background 0.1s;
+    }
+    .asc-checkbox-item:hover { background: var(--bg-hover); }
+    .asc-checkbox-item input[type="checkbox"] {
+      accent-color: var(--gold); cursor: pointer; width: 13px; height: 13px; flex-shrink: 0;
+    }
+
+    /* ── Card / Relic search filter ──────────────────────────────────────── */
+    .search-filter-group { flex: 1; min-width: 260px; }
+    .search-filter-outer { position: relative; display: flex; align-items: center; gap: 6px; }
+    .tag-input-wrap {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 3px 7px; cursor: text; min-height: 30px; flex: 1; min-width: 0;
+      transition: border-color 0.15s;
+    }
+    .tag-input-wrap:focus-within { border-color: var(--gold-dim); }
+    .tag-input-field {
+      background: none; border: none; outline: none; flex: 1; min-width: 80px;
+      color: var(--text-primary); font-size: 0.82rem; padding: 2px 0;
+    }
+    .tag-input-field::placeholder { color: var(--text-muted); }
+    .search-token {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: rgba(201,162,39,0.12); border: 1px solid var(--border-gold);
+      border-radius: 3px; padding: 2px 5px 2px 4px; cursor: pointer;
+      font-size: 0.72rem; color: var(--gold-light); user-select: none;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .search-token:hover { background: rgba(231,76,60,0.12); border-color: #e74c3c; color: #e74c3c; }
+    .search-token img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+    .search-token-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .search-token-x { opacity: 0.6; line-height: 1; }
+    .search-filter-clear-btn { font-size: 0.72rem; padding: 4px 8px; white-space: nowrap; flex-shrink: 0; }
+    .search-filter-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 300px; z-index: 400;
+      background: var(--bg-secondary); border: 1px solid var(--border-gold);
+      border-radius: var(--radius-sm); max-height: 260px; overflow-y: auto;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    .search-dropdown-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; cursor: pointer; transition: background 0.1s;
+    }
+    .search-dropdown-item:hover { background: var(--bg-hover); }
+    .search-dropdown-icon { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+    .search-dropdown-card-stub {
+      width: 26px; height: 26px; flex-shrink: 0; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: var(--text-muted);
+    }
+    .search-dropdown-name { flex: 1; font-size: 0.82rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .search-dropdown-badge {
+      font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 1px 5px; border-radius: 2px; flex-shrink: 0;
+    }
+    .search-dropdown-badge.relic { background: rgba(201,162,39,0.12); color: var(--gold-light); border: 1px solid rgba(201,162,39,0.25); }
+    .search-dropdown-badge.card  { background: rgba(74,159,212,0.10); color: #4a9fd4; border: 1px solid rgba(74,159,212,0.25); }
+    .search-dropdown-empty { padding: 10px 14px; font-size: 0.8rem; color: var(--text-muted); }
+
+    /* ── Spinner overlay ─────────────────────────────────────────────────── */
+    #loadingOverlay {
+      position: fixed; inset: 0; background: var(--bg-primary);
+      display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.3s;
+    }
+    #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       RUN DETAIL VIEW
+       ════════════════════════════════════════════════════════════════════════ */
+
+    #runDetailView {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Back nav */
+    .detail-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* ── Meta stats strip ────────────────────────────────────────────────── */
+    .detail-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px 36px;
+      padding: 4px 0;
+    }
+
+    .detail-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .detail-stat-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .detail-stat-value {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .detail-stat-value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .detail-stat-value.outcome-win       { color: var(--green); }
+    .detail-stat-value.outcome-loss      { color: #e74c3c; }
+    .detail-stat-value.outcome-abandoned { color: var(--text-muted); }
+
+    /* ── HP Journey Graph ───────────────────────────────────────────────── */
+    .hp-graph-wrap {
+      padding: 2px 0 4px;
+    }
+    .graph-node-icon image {
+      transition: filter 0.12s;
+    }
+    .graph-node-icon:hover image {
+      filter: brightness(1.4) drop-shadow(0 0 3px rgba(255,255,255,0.6));
+    }
+    .hp-legend-btn {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .hp-legend-btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+    .hp-legend-popup {
+      position: absolute;
+      z-index: 200;
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      min-width: 280px;
+      max-width: 340px;
+    }
+    .hp-legend-inner { padding: 14px 16px; }
+    .hp-legend-title { font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+    .hp-legend-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px; }
+    .hp-legend-row { display: flex; align-items: center; gap: 10px; font-size: 12px; margin-bottom: 6px; }
+    .hp-legend-line {
+      display: inline-block; width: 28px; height: 3px; border-radius: 2px; flex-shrink: 0;
+    }
+    .hp-legend-line-dashed {
+      background: none !important;
+      border-top: 2px dashed;
+      height: 0;
+      border-radius: 0;
+    }
+    .hp-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .hp-legend-icons { display: flex; flex-direction: column; gap: 5px; }
+    .hp-legend-icon-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .hp-legend-icon-wrap {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .hp-legend-icon-wrap img { width: 22px; height: 22px; object-fit: contain; }
+
+    /* ── Favorites ───────────────────────────────────────────────────────── */
+    .col-fav  { width: 28px; padding: 0 4px !important; }
+    .col-copy { width: 28px; padding: 0 4px !important; }
+    .copy-btn {
+      background: none; border: none; cursor: pointer; font-size: 0.85rem;
+      color: var(--text-muted); padding: 2px 4px; border-radius: 3px;
+      opacity: 0; transition: opacity 0.15s, color 0.15s;
+    }
+    .run-row:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { color: var(--gold); }
+    .copy-btn.copied { color: var(--green); opacity: 1; }
+    .fav-btn {
+      background: none; border: none; font-size: 15px; cursor: pointer;
+      color: rgba(255,255,255,0.15); padding: 2px 3px; line-height: 1;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .fav-btn:hover { color: #e6b800; transform: scale(1.2); }
+    .fav-btn.active { color: #e6b800; }
+    .run-row.favorited { background: rgba(230, 184, 0, 0.07); }
+    .run-row.favorited:hover { background: rgba(230, 184, 0, 0.13) !important; }
+    .fav-btn-detail {
+      color: rgba(255,255,255,0.5);
+      transition: color 0.15s;
+    }
+    .fav-btn-detail.active {
+      color: #e6b800 !important;
+      border-color: #e6b800 !important;
+    }
+    .fav-btn-detail:hover { color: #e6b800; }
+
+    /* ── Insights View ───────────────────────────────────────────────────── */
+    #insightsView {
+      flex: 1; overflow-y: auto; padding: 20px 24px 32px;
+    }
+    .insights-nav-bar {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+    }
+    .insights-page-title {
+      font-size: 1.15rem; font-weight: 700; color: var(--gold);
+    }
+    .insights-filter-note {
+      font-size: 0.75rem; color: var(--text-muted); margin-left: 4px;
+    }
+    .insight-card { margin-bottom: 0; }
+    .insight-table-wrap { overflow-x: auto; }
+    .insight-table td, .insight-table th { vertical-align: middle; }
+    .insight-rank { color: var(--text-muted); font-size: 11px; width: 28px; text-align: right; padding-right: 6px !important; }
+    .insight-relic-icon { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; }
+    .insight-relic-placeholder {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; background: var(--bg-secondary);
+      border-radius: 4px; font-size: 9px; color: var(--text-muted);
+    }
+    .insight-note { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+    .insight-slider-wrap { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+    .insight-slider-label { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
+    .insight-slider-label strong { color: var(--gold); font-weight: 700; }
+    .insight-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--bg-card); outline: none; cursor: pointer; }
+    .insight-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--gold); cursor: pointer; }
+    .sort-toggle-btn { flex-shrink: 0; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 28px; height: 24px; line-height: 1; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.12s, border-color 0.15s; }
+    .sort-toggle-btn:hover { background: rgba(255,255,255,0.06); }
+    .sort-toggle-btn.sort-desc { color: var(--green); border-color: rgba(39,174,96,0.45); }
+    .sort-toggle-btn.sort-asc  { color: #e74c3c;     border-color: rgba(231,76,60,0.45); }
+    .combo-icons { display: inline-flex; align-items: center; gap: 2px; }
+    .combo-names { font-size: 12px; }
+    .combo-plus { color: var(--text-muted); margin: 0 4px; }
+    .wr-bar-wrap { display: flex; align-items: center; gap: 6px; min-width: 160px; }
+    .wr-bar { flex: 1; height: 7px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; min-width: 60px; }
+    .wr-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .wr-pct { font-size: 12px; font-weight: 600; min-width: 40px; }
+    .wr-n { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .deck-size-chart { padding: 4px 0; display: flex; flex-direction: column; gap: 7px; }
+    .deck-size-row { display: flex; align-items: center; gap: 10px; }
+    .deck-size-label { font-size: 12px; min-width: 80px; text-align: right; color: var(--text-muted); }
+    .deck-size-bar-wrap { flex: 1; height: 10px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+    .deck-size-bar { height: 100%; border-radius: 4px; }
+    .deck-size-wr { font-size: 12px; font-weight: 600; min-width: 40px; }
+    .streak-block { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .streak-stat { display: flex; flex-direction: column; align-items: center; padding: 16px; }
+    .streak-value { font-size: 3rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .streak-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .delta-pos { color: #27ae60; font-weight: 600; }
+    .delta-neg { color: #e74c3c; font-weight: 600; }
+    .delta-neu { color: var(--text-muted); }
+
+    /* ── Relics section ──────────────────────────────────────────────────── */
+    .detail-relics-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .relic-icon-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 6px 6px;
+      cursor: pointer;
+      width: 76px;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .relic-icon-btn:hover {
+      border-color: var(--gold-dim);
+      background: var(--bg-hover);
+      transform: translateY(-2px);
+    }
+    .relic-icon-btn:active { transform: translateY(0); }
+
+    .relic-icon-btn img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      image-rendering: auto;
+    }
+    .relic-icon-placeholder {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .relic-icon-placeholder.large {
+      width: 64px;
+      height: 64px;
+      font-size: 1rem;
+    }
+
+    .relic-icon-name {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.25;
+      max-width: 68px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    /* ── Card grid ───────────────────────────────────────────────────────── */
+    .detail-card-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .card-grid-item {
+      position: relative;
+      border-radius: 5px;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card-grid-item:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+      z-index: 1;
+    }
+    .card-grid-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 5px;
+    }
+    .card-enchant-icon {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 4px;
+      padding: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.12s;
+      z-index: 2;
+    }
+    .card-enchant-icon:hover {
+      background: rgba(0, 0, 0, 0.82);
+      border-color: var(--gold-dim);
+      transform: scale(1.15);
+    }
+    .card-enchant-icon img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+    }
+    .card-img-placeholder {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 6px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+      aspect-ratio: 734 / 916;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       NODE POPUP
+       ════════════════════════════════════════════════════════════════════════ */
+
+    .node-popup-box {
+      max-width: 400px;
+    }
+    .node-popup-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .node-popup-cat-badge {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border: 1px solid;
+      border-radius: 3px;
+      padding: 2px 6px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .node-popup-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .node-popup-hp {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-family: 'Courier New', monospace;
+    }
+    .node-popup-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .node-popup-event-img {
+      width: 100%;
+      max-height: 120px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: var(--bg-primary);
+    }
+    .node-popup-chose {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .node-popup-chose strong {
+      color: var(--gold-light);
+    }
+    .node-popup-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin: 0;
+    }
+    .node-popup-flavor {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .node-popup-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .node-popup-tag {
+      font-size: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 2px 8px;
+      color: var(--text-secondary);
+    }
+    .node-popup-tag.chosen {
+      border-color: var(--gold-dim);
+      color: var(--gold-light);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       RELIC POPUP
+       ════════════════════════════════════════════════════════════════════════ */
+
+    .popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 600;
+      animation: popupFadeIn 0.15s ease;
+    }
+    @keyframes popupFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .popup-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-lg);
+      padding: 28px 28px 24px;
+      max-width: 440px;
+      width: 90%;
+      position: relative;
+      animation: popupScaleIn 0.15s ease;
+    }
+    @keyframes popupScaleIn {
+      from { transform: scale(0.94); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      line-height: 1;
+      border-radius: var(--radius-sm);
+      transition: color 0.15s, background 0.15s;
+    }
+    .popup-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+    .popup-content {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .popup-relic-img-wrap {
+      flex-shrink: 0;
+      width: 88px;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(201, 162, 39, 0.07);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-md);
+    }
+    .popup-relic-img-wrap img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+    .popup-relic-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 2px;
+    }
+    .popup-relic-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      line-height: 1.2;
+    }
+    .popup-relic-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .popup-relic-desc {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-top: 2px;
+    }
+
+    /* ── Card popup ──────────────────────────────────────────────────────── */
+    .card-popup-box {
+      max-width: 560px;
+    }
+    .card-popup-header {
+      margin-bottom: 16px;
+      padding-right: 28px;
+    }
+    .card-popup-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+    .card-popup-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-top: 4px;
+    }
+    .card-popup-images {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .card-popup-img-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-popup-img-wrap p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin: 0;
+    }
+    .card-popup-img-wrap img {
+      max-width: 200px;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+    }
+
+    /* ── Clickable insight items ─────────────────────────────────────────── */
+    .insight-relic-clickable {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--radius-sm);
+      padding: 1px 2px;
+      transition: background 0.12s;
+    }
+    .insight-relic-clickable:hover { background: rgba(201,162,39,0.12); }
+    .insight-card-link {
+      cursor: pointer;
+      color: var(--text-primary);
+      border-bottom: 1px dashed var(--border);
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .insight-card-link:hover { color: var(--gold-light); border-color: var(--gold-dim); }
+    .insight-event-link {
+      cursor: pointer;
+      color: var(--text-primary);
+      border-bottom: 1px dashed var(--border);
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .insight-event-link:hover { color: var(--gold-light); border-color: var(--gold-dim); }
+
+    /* ── Event popup ─────────────────────────────────────────────────────── */
+    .event-popup-box { max-width: 480px; }
+    .popup-event-img-wrap {
+      flex-shrink: 0;
+      width: 100px;
+      height: 100px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .popup-event-img-wrap img { width: 88px; height: 88px; object-fit: contain; }
+    .event-img-placeholder {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .popup-event-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 2px;
+    }
+    .popup-event-name { font-size: 1.05rem; font-weight: 700; color: var(--gold-light); line-height: 1.2; }
+    .popup-event-flavor {
+      font-size: 0.8rem;
+      font-style: italic;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .popup-event-desc { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.55; }
+
+    /* ── Section heading sub-count ───────────────────────────────────────── */
+    .section-count {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    /* ── Help button ─────────────────────────────────────────────────────── */
+    .help-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .help-btn:hover { border-color: var(--gold-dim); color: var(--gold-light); }
+
+    /* ── Help overlay ────────────────────────────────────────────────────── */
+    .help-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 700;
+      animation: popupFadeIn 0.15s ease;
+    }
+    .help-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 680px;
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      animation: popupScaleIn 0.15s ease;
+    }
+    .help-box-header {
+      padding: 22px 28px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .help-box-header h2 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--gold-light);
+    }
+    .help-box-header p {
+      margin: 4px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .help-box-body {
+      overflow-y: auto;
+      padding: 20px 28px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .help-section h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold-dim);
+      margin: 0 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .help-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .help-item {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+    }
+    .help-item-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      min-width: 140px;
+    }
+    .help-item-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .help-kbd {
+      display: inline-block;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.75rem;
+      color: var(--gold-dim);
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay">
+    <div class="loading">
+      <div class="spinner"></div>
+      Loading run data…
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <img class="header-icon" src="../Slay_the_Spire_2_icon.webp" alt="STS2" style="width:1.8rem;height:1.8rem;object-fit:contain;" />
+      <div>
+        <div class="header-title">STS2 Stats</div>
+        <button class="header-folder-btn" id="headerFolderBtn" title="Show history path">History Path</button>
+        <div class="header-folder" id="headerFolder" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="refresh-indicator" id="refreshIndicator">↻ Refreshed</span>
+      <div class="open-run-wrap" style="position:relative;">
+        <button class="btn btn-secondary" id="openRunBtn">📂 Open Run ▾</button>
+        <div id="openRunMenu" class="open-run-menu" style="display:none;">
+          <button class="open-run-menu-item" id="openRunDiskBtn">📂 From disk</button>
+          <button class="open-run-menu-item" id="pastebinImportBtn">🔗 From Pastebin</button>
+        </div>
+      </div>
+      <button class="btn btn-secondary" id="insightsBtn">📊 Insights</button>
+      <div style="position:relative;">
+        <button class="btn btn-secondary" id="updateResourcesBtn">⬇ Update Resources</button>
+        <span id="resourceLastUpdatedLabel"
+              style="position:absolute; top:100%; left:50%; transform:translateX(-50%);
+                     margin-top:3px; font-size:0.65rem; color:var(--text-muted); white-space:nowrap;"></span>
+      </div>
+      <button class="btn btn-secondary" id="refreshBtn">↻ Refresh</button>
+      <button class="btn btn-secondary" id="changeFolderBtn">Change Folder</button>
+      <button class="help-btn" id="helpBtn" title="Help">?</button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LIST VIEW
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <main class="main-content" id="mainContent" style="display:none;">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-group">
+        <label class="filter-label">Abandoned Runs</label>
+        <select class="filter-select" id="filterAbandoned">
+          <option value="include">Include</option>
+          <option value="exclude">Exclude</option>
+          <option value="only">Only Abandoned</option>
+        </select>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group" style="min-width:180px;">
+        <label class="filter-label">Min Duration: <span id="minDurValue">0</span>m</label>
+        <input type="range" class="filter-slider" id="filterMinDur" min="0" max="120" value="0" step="1" />
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group" style="min-width:auto;">
+        <label class="filter-label">Mode</label>
+        <div class="mode-toggle" id="filterModeToggle">
+          <button class="mode-toggle-btn active" data-mode="all">All</button>
+          <button class="mode-toggle-btn" data-mode="solo">Solo</button>
+          <button class="mode-toggle-btn" data-mode="coop">Co-op</button>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group" style="min-width:auto;">
+        <label class="filter-label">Outcome</label>
+        <div class="filter-checks">
+          <label class="check-label">
+            <input type="checkbox" id="filterWinOnly" />
+            Wins only
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="filterFavorited" />
+            ★ Favorites only
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group">
+        <label class="filter-label">Character</label>
+        <select class="filter-select" id="filterCharacter">
+          <option value="all">All</option>
+          <option value="Ironclad">Ironclad</option>
+          <option value="Silent">Silent</option>
+          <option value="Regent">Regent</option>
+          <option value="Necrobinder">Necrobinder</option>
+          <option value="Defect">Defect</option>
+        </select>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group" style="min-width:auto;">
+        <label class="filter-label">Ascension</label>
+        <div class="asc-filter-wrap" id="ascFilterWrap">
+          <button class="asc-filter-btn" id="ascFilterBtn">All</button>
+          <div class="asc-filter-panel" id="ascFilterPanel" style="display:none;">
+            <div class="asc-filter-ctrl">
+              <button class="asc-ctrl-btn" id="ascCheckAll">Check All</button>
+              <button class="asc-ctrl-btn" id="ascUncheckAll">Uncheck All</button>
+            </div>
+            <div class="asc-checkbox-list" id="ascCheckboxList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group search-filter-group">
+        <label class="filter-label">Has Card / Relic</label>
+        <div class="search-filter-outer" id="searchFilterWrap">
+          <div class="tag-input-wrap" id="tagInputWrap">
+            <input type="text" id="searchFilterInput" class="tag-input-field"
+              placeholder="Search cards &amp; relics…" autocomplete="off" spellcheck="false" />
+          </div>
+          <button class="btn btn-secondary search-filter-clear-btn" id="searchFilterClearAll" style="display:none;">Clear</button>
+          <div class="search-filter-dropdown" id="searchFilterDropdown" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <button class="btn btn-secondary" id="resetFiltersBtn" style="font-size:0.78rem;padding:5px 12px;white-space:nowrap;">Reset Filters</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="summary-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Runs</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub" id="statAbandoned"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="statWinRate">—</div>
+        <div class="stat-sub" id="statWinRateSub"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Wins</div>
+        <div class="stat-value green" id="statWins">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Losses</div>
+        <div class="stat-value red" id="statLosses">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Duration</div>
+        <div class="stat-value" id="statAvgDur">—</div>
+        <div class="stat-sub">minutes</div>
+      </div>
+    </div>
+
+    <!-- Character Breakdown + Death Causes -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><h2>By Character</h2></div>
+        <div id="charBreakdown"><div class="empty-state">No data yet.</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Top Death Causes</h2></div>
+        <ul class="death-list" id="deathList">
+          <li style="color:var(--text-muted);">No data yet.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Ascension Distribution -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div class="card-header"><h2>Ascension Distribution</h2></div>
+      <div class="asc-bars" id="ascBars"><div class="empty-state">No data yet.</div></div>
+    </div>
+
+    <!-- All Runs -->
+    <div class="card runs-section">
+      <div class="card-header">
+        <h2>Runs</h2>
+        <div id="runsPagination" style="display:flex;align-items:center;gap:10px;"></div>
+      </div>
+      <div id="allRunsWrap">
+        <div class="empty-state">No runs found.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       RUN DETAIL VIEW
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="runDetailView" style="display:none;">
+
+    <!-- Back nav -->
+    <div class="detail-nav" style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-secondary" id="backBtn">← Back to Runs</button>
+      <button class="btn btn-secondary fav-btn-detail" id="detailFavBtn">☆ Favorite</button>
+      <button class="btn btn-secondary" id="detailCopyBtn">📋 Copy Run</button>
+      <button class="btn btn-secondary" id="detailPastebinBtn">📤 Pastebin</button>
+    </div>
+
+    <!-- Run metadata -->
+    <div class="card">
+      <div id="detailMetaRow" class="detail-meta-row"></div>
+    </div>
+
+    <!-- HP Journey Graph -->
+    <div class="card" id="hpGraphSection">
+      <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+        <h2 style="margin:0;flex:1">Journey</h2>
+        <button id="hpLegendBtn" class="hp-legend-btn">Legend</button>
+      </div>
+      <div id="hpGraphSvgWrap" class="hp-graph-wrap"></div>
+    </div>
+
+    <!-- HP Graph Legend popup -->
+    <div id="hpLegendPopup" class="hp-legend-popup" style="display:none">
+      <div class="hp-legend-inner">
+        <div class="hp-legend-title">Graph Legend</div>
+        <div class="hp-legend-section-label">Lines</div>
+        <div class="hp-legend-row"><span class="hp-legend-line" style="background:#27ae60"></span><span>Current HP</span></div>
+        <div class="hp-legend-row"><span class="hp-legend-line hp-legend-line-dashed" style="border-color:#4a9fd4"></span><span>Max HP</span></div>
+        <div class="hp-legend-row">
+          <span style="display:inline-flex;gap:4px;align-items:center;">
+            <span class="hp-legend-dot" style="background:#2ecc71"></span>
+            <span class="hp-legend-dot" style="background:#e67e22"></span>
+            <span class="hp-legend-dot" style="background:#e74c3c"></span>
+          </span>
+          <span>HP dot (green &gt;50%, orange &gt;25%, red ≤25%)</span>
+        </div>
+        <div class="hp-legend-section-label" style="margin-top:10px">Node Icons</div>
+        <div id="hpLegendIcons" class="hp-legend-icons"></div>
+      </div>
+    </div>
+
+    <!-- Player tabs (coop only) -->
+    <div id="detailPlayerTabsWrap" style="display:none;" class="card">
+      <div class="detail-player-tabs" id="detailPlayerTabs"></div>
+    </div>
+
+    <!-- Relics -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Relics <span class="section-count" id="detailRelicsCount"></span></h2>
+      </div>
+      <div id="detailRelicsRow" class="detail-relics-row"></div>
+    </div>
+
+    <!-- Deck -->
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;gap:12px;">
+        <h2 style="margin:0;flex:1;">Deck <span class="section-count" id="detailDeckCount"></span></h2>
+        <button class="btn btn-secondary" id="deckSortBtn" style="font-size:0.78rem;padding:4px 10px;">Sort</button>
+      </div>
+      <div id="detailCardGrid" class="detail-card-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       INSIGHTS VIEW
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="insightsView" style="display:none;">
+    <div class="insights-nav-bar">
+      <button class="btn btn-secondary" id="backFromInsightsBtn">← Back</button>
+      <span class="insights-page-title">Insights</span>
+      <span class="insights-filter-note" id="insightsFilterNote"></span>
+    </div>
+    <div id="insightsContent"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       NODE POPUP
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="nodePopup" class="popup-overlay" style="display:none;">
+    <div class="popup-box node-popup-box">
+      <button class="popup-close" id="nodePopupClose">✕</button>
+      <div class="node-popup-header">
+        <span class="node-popup-cat-badge" id="nodePopupCatBadge"></span>
+        <span class="node-popup-name" id="nodePopupName"></span>
+      </div>
+      <div class="node-popup-hp" id="nodePopupHp"></div>
+      <div id="nodePopupDetails" class="node-popup-details"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       RELIC POPUP
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="relicPopup" class="popup-overlay" style="display:none;">
+    <div class="popup-box">
+      <button class="popup-close" id="relicPopupClose">✕</button>
+      <div class="popup-content">
+        <div class="popup-relic-img-wrap" id="popupRelicImgWrap"></div>
+        <div class="popup-relic-info">
+          <div class="popup-relic-name" id="popupRelicName"></div>
+          <div class="popup-relic-meta" id="popupRelicMeta"></div>
+          <div class="popup-relic-desc" id="popupRelicDesc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Popup -->
+  <div id="cardPopup" class="popup-overlay" style="display:none;">
+    <div class="popup-box card-popup-box">
+      <button class="popup-close" id="cardPopupClose">✕</button>
+      <div class="card-popup-header">
+        <div class="card-popup-name" id="cardPopupName"></div>
+        <div class="card-popup-meta" id="cardPopupMeta"></div>
+      </div>
+      <div class="card-popup-images" id="cardPopupImages"></div>
+    </div>
+  </div>
+
+  <!-- Event Popup -->
+  <div id="eventPopup" class="popup-overlay" style="display:none;">
+    <div class="popup-box event-popup-box">
+      <button class="popup-close" id="eventPopupClose">✕</button>
+      <div class="popup-content">
+        <div class="popup-event-img-wrap" id="eventPopupImgWrap"></div>
+        <div class="popup-event-info">
+          <div class="popup-event-name" id="eventPopupName"></div>
+          <div class="popup-event-flavor" id="eventPopupFlavor"></div>
+          <div class="popup-event-desc" id="eventPopupDesc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div id="errorState" style="display:none; padding:40px;">
+    <div class="error-msg" id="errorMsg"></div>
+    <button class="btn btn-secondary" id="retryBtn" style="margin-top:12px;">Retry</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       HELP OVERLAY
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="helpOverlay" class="help-overlay" style="display:none;">
+    <div class="help-box">
+      <button class="popup-close" id="helpClose">✕</button>
+      <div class="help-box-header">
+        <h2>STS2 Stats — Help</h2>
+        <p>A quick reference for all features in this app.</p>
+      </div>
+      <div class="help-box-body">
+
+        <div class="help-section">
+          <h3>Getting Started</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">History Folder</span>
+              <span class="help-item-desc">On first launch, point the app at the folder where STS2 saves your <span class="help-kbd">.run</span> files. Typical path on Windows: <span class="help-kbd">%APPDATA%\Roaming\STS2\history</span>. The folder is watched live — new runs appear automatically.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Update Resources</span>
+              <span class="help-item-desc">Downloads relic, card, enchantment, and event data (images + descriptions) from the STS2 wiki. No external tools required. Run this once before first use and again whenever new content is added to the game.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Change Folder</span>
+              <span class="help-item-desc">Switch to a different history folder at any time via the header button.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Run List</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Columns</span>
+              <span class="help-item-desc">Character, outcome (Win / Loss / Abandoned), ascension level, floor reached, run duration, and date. Coop runs show all players and a <em>CO-OP</em> badge.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Sorting</span>
+              <span class="help-item-desc">Click any column header to sort by that field. Click again to toggle ascending / descending.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Favorites</span>
+              <span class="help-item-desc">Click the ★ star on a row to favorite a run. Favorited runs show a gold star. Use the <em>Favorites only</em> filter to see just your starred runs.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Copy Run</span>
+              <span class="help-item-desc">Click 📋 on any row to copy the actual <span class="help-kbd">.run</span> file to your clipboard — paste it directly into a folder, Discord, etc.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Open Run</span>
+              <span class="help-item-desc">The <em>📂 Open Run</em> header button lets you open any <span class="help-kbd">.run</span> file from disk — including ones shared by other players — and view its full detail page. The run is loaded temporarily and does not get added to your run list or statistics; close the detail view and it's gone.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Pagination</span>
+              <span class="help-item-desc">Runs are shown 12 per page. Use the page controls below the table to navigate.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Filters</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Search</span>
+              <span class="help-item-desc">Type a character name, relic name, or card name to filter runs that include it. Multiple tokens narrow the results further.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Mode</span>
+              <span class="help-item-desc">Toggle between <em>All</em>, <em>Solo</em>, and <em>Co-op</em> to filter by game mode.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Character</span>
+              <span class="help-item-desc">Filter to a specific character or keep <em>All</em>.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Ascension</span>
+              <span class="help-item-desc">Click <em>Ascension</em> to open a multi-select of all ascension levels present in your runs.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Win Only / Abandoned</span>
+              <span class="help-item-desc">Tick <em>Wins only</em> to show only victorious runs, or <em>Include abandoned</em> to show runs that were quit mid-way.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Min Duration</span>
+              <span class="help-item-desc">Hide very short runs (e.g., crashes or accidental starts) by setting a minimum run length in minutes.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Favorites Only</span>
+              <span class="help-item-desc">Show only runs you have starred.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Reset Filters</span>
+              <span class="help-item-desc">Clears all active filters back to their defaults in one click.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Run Detail View</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Opening a Run</span>
+              <span class="help-item-desc">Click anywhere on a run row to open its detail page.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Journey Graph</span>
+              <span class="help-item-desc">Shows your HP (green line) and max HP (blue dashed) across every node of the run. Click any node icon to see what happened at that stop — fight, event, shop, rest site, etc.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Relics</span>
+              <span class="help-item-desc">All relics held at run end. Click any relic icon to see its description, rarity, and character.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Deck</span>
+              <span class="help-item-desc">Full deck at run end. Upgraded cards are shown with their upgraded art. Click the enchantment badge on a card to view its description. Use the <em>Sort</em> button to order by type → rarity → alphabetical; click again to restore original order.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Co-op Player Tabs</span>
+              <span class="help-item-desc">In co-op runs, tabs appear above the relics section to switch between players. Each tab shows that player's HP graph, relics, and deck.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Favorite &amp; Copy</span>
+              <span class="help-item-desc">Star a run or copy its <span class="help-kbd">.run</span> file directly from the detail nav bar.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Insights Tab</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Scope</span>
+              <span class="help-item-desc">Insights always reflect whatever filters are currently active in the run list — so you can drill into stats for a specific character, ascension level, or game mode.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Relic / Card Win Rate</span>
+              <span class="help-item-desc">Win rate for runs that included each relic or card. Use the <em>Min samples</em> slider to hide entries with too few data points.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Best Relic Pairs</span>
+              <span class="help-item-desc">Win rate for runs that contained both relics simultaneously. Slider filters by sample count.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Best Card Duos &amp; Trios</span>
+              <span class="help-item-desc">Win rate for runs containing both (or all three) cards at once, computed over the top 30 / 20 most-seen cards to keep combinations meaningful.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Card Upgrade Value</span>
+              <span class="help-item-desc">Compares win rate when a card was present in its base form vs. upgraded form, showing the delta. A large positive delta means upgrading that card tends to correlate with better runs.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Strike / Defend Removal</span>
+              <span class="help-item-desc">Win rate split by whether you removed all copies of Strike or Defend from your deck vs. keeping at least one.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Deck Size vs Win Rate</span>
+              <span class="help-item-desc">Win rate bucketed by final deck size, showing whether smaller or larger decks perform better in your runs.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Most Picked Relics &amp; Cards</span>
+              <span class="help-item-desc">Frequency ranking — how often each relic or card appeared across all filtered runs. Starter relics and starter cards are excluded.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Clickable Items</span>
+              <span class="help-item-desc">Click any relic icon or name to see its full description. Click any <span style="border-bottom:1px dashed var(--border)">card name</span> to view the base and upgraded card images side by side.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       UPDATE RESOURCES OVERLAY  (full-screen lock, blocks all interaction)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="updateOverlay" style="display:none; position:fixed; inset:0; z-index:9000;
+       background:rgba(10,8,20,0.92); align-items:center; justify-content:center;">
+    <div style="background:var(--bg-secondary); border:1px solid var(--border-gold);
+                border-radius:var(--radius-lg); width:720px; max-width:92vw;
+                display:flex; flex-direction:column; padding:28px 32px; gap:18px;">
+
+      <!-- Title row -->
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.15rem; font-weight:700; color:var(--gold);">⬇ Update Resources</span>
+        <span id="updateOverlayPct" style="margin-left:auto; font-size:0.85rem;
+              font-weight:600; color:var(--text-muted); font-variant-numeric:tabular-nums;">0%</span>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="background:var(--bg-primary); border-radius:999px; height:10px; overflow:hidden;">
+        <div id="updateProgressBar"
+             style="height:100%; width:0%; background:linear-gradient(90deg,#c9a227,#e8c84a);
+                    border-radius:999px; transition:width 0.35s ease;"></div>
+      </div>
+
+      <!-- Current operation -->
+      <div id="updateOverlayStatus"
+           style="font-size:0.8rem; color:var(--text-muted); min-height:1.2em;
+                  font-family:'Courier New',monospace; white-space:nowrap;
+                  overflow:hidden; text-overflow:ellipsis;">Starting…</div>
+
+      <!-- Scrollable log -->
+      <div id="updateOverlayLog"
+           style="overflow-y:auto; background:var(--bg-primary); border:1px solid var(--border);
+                  border-radius:var(--radius); padding:10px 12px;
+                  font-family:'Courier New',monospace; font-size:0.72rem;
+                  line-height:1.55; height:240px;
+                  white-space:pre-wrap; word-break:break-all;"></div>
+
+      <!-- Footer buttons -->
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-secondary" id="updateCancelBtn">Cancel</button>
+        <button class="btn btn-secondary" id="updateCloseBtn" style="display:none;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PASTEBIN IMPORT PANEL
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="pastebinImportOverlay" class="popup-overlay" style="display:none;">
+    <div class="popup-box" style="max-width:460px;">
+      <button class="popup-close" id="pastebinImportCloseBtn">✕</button>
+      <h3 style="margin:0 0 6px; color:var(--gold);">Open from Pastebin</h3>
+      <p style="margin:0 0 16px; font-size:0.85rem; color:var(--text-muted);">Paste a Pastebin URL containing <code>.run</code> JSON data.</p>
+      <input id="pastebinImportInput" type="text" placeholder="https://pastebin.com/xxxxxxxx"
+        style="width:100%; box-sizing:border-box; background:var(--bg-primary); border:1px solid var(--border);
+               border-radius:var(--radius-sm); color:var(--text-primary); padding:9px 12px;
+               font-size:0.9rem; outline:none; margin-bottom:10px;" />
+      <div id="pastebinImportError" style="display:none; color:#e74c3c; font-size:0.82rem; margin-bottom:10px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-secondary" id="pastebinImportCloseBtn2">Close</button>
+        <button class="btn btn-primary" id="pastebinImportOpenBtn">Open Run</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PASTEBIN API KEY MODAL
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="pastebinApiKeyOverlay" class="popup-overlay" style="display:none;">
+    <div class="popup-box" style="max-width:460px;">
+      <button class="popup-close" id="pastebinApiKeyCloseBtn">✕</button>
+      <h3 style="margin:0 0 6px; color:var(--gold);">Pastebin API Key</h3>
+      <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-muted);">
+        A Pastebin developer API key is required to export pastes. To get one:
+      </p>
+      <ol style="margin:0 0 10px; padding-left:20px; font-size:0.85rem; color:var(--text-muted); line-height:1.7;">
+        <li>Create a free account at <strong style="color:var(--text-secondary);">pastebin.com</strong></li>
+        <li>Go to <strong style="color:var(--text-secondary);">pastebin.com/doc_api#1</strong> — your unique API dev key is shown at the top of that page</li>
+        <li>Copy and paste it below</li>
+      </ol>
+      <p style="margin:0 0 14px; font-size:0.82rem; color:var(--text-muted);">Your key is saved locally and never shared.</p>
+      <input id="pastebinApiKeyInput" type="text" placeholder="Paste your API dev key here"
+        style="width:100%; box-sizing:border-box; background:var(--bg-primary); border:1px solid var(--border);
+               border-radius:var(--radius-sm); color:var(--text-primary); padding:9px 12px;
+               font-size:0.9rem; outline:none; margin-bottom:10px;" />
+      <div id="pastebinApiKeyError" style="display:none; color:#e74c3c; font-size:0.82rem; margin-bottom:10px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-secondary" id="pastebinApiKeyCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="pastebinApiKeySaveBtn">Save &amp; Export</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
