@@ -32,6 +32,7 @@ const WIKI_PAGES = {
   enchantments: 'Slay_the_Spire_2:Enchantments',
   events:       'Slay_the_Spire_2:Events_List',
   cards:        'Slay_the_Spire_2:Cards_List',
+  potions:      'Slay_the_Spire_2:Potions_List',
   map_icons:    'Category:Map_Icons',
 };
 
@@ -314,7 +315,11 @@ function mapHeaders(headerRow, fieldMap) {
   const result = {};
   for (let i = 0; i < headerRow.length; i++) {
     const text = cleanText(headerRow[i].text).toLowerCase();
-    if (!text) { result[i] = 'img'; continue; }
+    // Treat empty, "icon", "image", or "img" headers as the image column
+    if (!text || text === 'icon' || text === 'image' || text === 'img') {
+      result[i] = 'img';
+      continue;
+    }
     const match = sortedKeys.find(kw => text.includes(kw));
     result[i] = match ? fieldMap[match] : `_col${i}`;
   }
@@ -606,6 +611,41 @@ async function updateEvents(html) {
   await syncImages(newEntries.map(e => [e.image, e.imageFile]), imagesDir, FORCE_IMAGES, DRY_RUN, forceNames);
 }
 
+async function updatePotions(html) {
+  log('\n━━━ POTIONS ━━━');
+  const jsonPath  = path.join(DATA_DIR,   'potions.json');
+  const imagesDir = path.join(IMAGES_DIR, 'potion_images');
+  fs.mkdirSync(imagesDir, { recursive: true });
+  const existing = fs.existsSync(jsonPath) ? JSON.parse(fs.readFileSync(jsonPath, 'utf8')) : [];
+
+  if (!html) { log('  ✗ No HTML available (fetch failed earlier)'); return; }
+
+  const boxes = extractBoxes(html, 'potion-box');
+  if (!boxes.length) { log('  ✗ No potion-box elements found. Wiki may have restructured.'); return; }
+  log(`  Found ${boxes.length} potion boxes`);
+
+  const newEntries = [];
+  for (const box of boxes) {
+    const name = extractName(box, 'potion-title');
+    if (!name) continue;
+    const [imgUrl, imgFile] = makeImgPair(firstImgIn(box, 'img-base'));
+    newEntries.push({
+      name,
+      rarity:      boxAttr(box, 'data-rarity'),
+      character:   boxAttr(box, 'data-character'),
+      description: innerText(box, 'potion-desc'),
+      link:        firstWikiHref(box),
+      image:       imgUrl,
+      imageFile:   imgFile,
+    });
+    log(`  item [${newEntries.length}]`);
+  }
+
+  const dirty = reportAndWrite(existing, newEntries, jsonPath, DRY_RUN);
+  const forceNames = new Set(newEntries.filter(e => dirty.has(e.name) && e.imageFile).map(e => e.imageFile));
+  await syncImages(newEntries.map(e => [e.image, e.imageFile]), imagesDir, FORCE_IMAGES, DRY_RUN, forceNames);
+}
+
 async function updateMapIcons() {
   log('\n━━━ MAP ICONS ━━━');
   const iconsDir = path.join(IMAGES_DIR, 'map_icons');
@@ -711,7 +751,7 @@ async function main() {
   if (DRY_RUN) log('DRY RUN — JSON files and images will NOT be modified\n');
 
   // Fetch the 4 main wiki pages in parallel (map_icons uses its own API calls)
-  const pageKeys = ['relics', 'cards', 'enchantments', 'events'];
+  const pageKeys = ['relics', 'cards', 'enchantments', 'events', 'potions'];
   const fetchTargets = WHAT === 'all' ? pageKeys : pageKeys.filter(k => k === WHAT);
 
   const htmlMap = {};
@@ -732,6 +772,7 @@ async function main() {
   if (WHAT === 'all' || WHAT === 'cards')        await updateCards(htmlMap.cards);
   if (WHAT === 'all' || WHAT === 'enchantments') await updateEnchantments(htmlMap.enchantments);
   if (WHAT === 'all' || WHAT === 'events')       await updateEvents(htmlMap.events);
+  if (WHAT === 'all' || WHAT === 'potions')      await updatePotions(htmlMap.potions);
   if (WHAT === 'all' || WHAT === 'map_icons')    await updateMapIcons();
 
   log('\n✓ Done.');
