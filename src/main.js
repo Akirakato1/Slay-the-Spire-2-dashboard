@@ -311,7 +311,7 @@ ipcMain.handle('navigate-to-setup', () => {
 // ── Resource updater ──────────────────────────────────────────────────────────
 
 const resourceMetaPath = path.join(settingsDir, 'resource_meta.json');
-const DATA_FILES = ['relics.json', 'cards.json', 'enchantments.json', 'events.json'];
+const DATA_FILES = ['relics.json', 'cards.json', 'enchantments.json', 'events.json', 'potions.json'];
 
 ipcMain.handle('check-data-exists', () => {
   return DATA_FILES.every(f => {

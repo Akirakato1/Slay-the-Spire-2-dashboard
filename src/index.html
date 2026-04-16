@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self' appdata:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' appdata: data:;" />
-  <title>STS2 Stats — Dashboard</title>
+  <title>STS2 Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
     /* ── Layout ─────────────────────────────────────────────────────────── */
@@ -294,6 +294,8 @@
       transition: background 0.12s, border-color 0.12s, color 0.12s;
     }
     .search-token:hover { background: rgba(231,76,60,0.12); border-color: #e74c3c; color: #e74c3c; }
+    .search-token--exclude { background: rgba(231,76,60,0.1); border-color: rgba(231,76,60,0.45); color: #e07070; }
+    .search-token--exclude:hover { background: rgba(231,76,60,0.2); border-color: #e74c3c; color: #e74c3c; }
     .search-token img { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
     .search-token-name { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .search-token-x { opacity: 0.6; line-height: 1; }
@@ -481,6 +483,11 @@
       font-size: 0.75rem; color: var(--text-muted); margin-left: 4px;
     }
     .insight-card { margin-bottom: 0; }
+    .insight-card .card-header { cursor: pointer; user-select: none; }
+    .insight-card .card-header:hover h2 { color: var(--gold-light); }
+    .insight-card .card-header h2::after { content: ' ▾'; font-size: 0.75em; color: var(--text-muted); }
+    .insight-card.collapsed .card-header h2::after { content: ' ▸'; }
+    .insight-card.collapsed .insight-table tbody tr:nth-child(n+6) { display: none; }
     .insight-table-wrap { overflow-x: auto; }
     .insight-table td, .insight-table th { vertical-align: middle; }
     .insight-rank { color: var(--text-muted); font-size: 11px; width: 28px; text-align: right; padding-right: 6px !important; }
@@ -615,7 +622,7 @@
     .card-enchant-icon {
       position: absolute;
       top: 4px;
-      left: 4px;
+      right: 4px;
       background: rgba(0, 0, 0, 0.55);
       border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: 4px;
@@ -745,7 +752,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 600;
+      z-index: 900;
       animation: popupFadeIn 0.15s ease;
     }
     @keyframes popupFadeIn {
@@ -1053,6 +1060,191 @@
       color: var(--gold-dim);
       font-family: monospace;
     }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       DECK BUILD STEPPER
+       ════════════════════════════════════════════════════════════════════════ */
+    #deckStepperOverlay {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,0.82);
+      align-items: center; justify-content: center;
+    }
+    #deckStepperModal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-gold);
+      border-radius: var(--radius-lg);
+      width: 94vw; max-width: 1120px; height: 88vh;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .stepper-player-tabs { display: flex; gap: 6px; margin-left: auto; }
+    .stepper-player-tab {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-size: 0.72rem; padding: 4px 10px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .stepper-player-tab:hover { border-color: var(--gold-dim); }
+    .stepper-player-tab.active {
+      background: rgba(201,162,39,0.15);
+      border-color: var(--gold);
+      color: var(--gold-light);
+      font-weight: 600;
+    }
+    .stepper-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .stepper-title { font-size: 0.92rem; font-weight: 700; color: var(--gold); }
+    .stepper-close {
+      margin-left: auto; background: none; border: none;
+      color: var(--text-muted); font-size: 1.1rem; cursor: pointer;
+      padding: 3px 7px; border-radius: var(--radius-sm);
+      transition: color 0.15s, background 0.15s;
+    }
+    .stepper-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+    .stepper-nav {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 18px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; background: var(--bg-primary);
+    }
+    .stepper-nav-btn {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-size: 1rem; width: 34px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .stepper-nav-btn:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--gold-dim); }
+    .stepper-nav-btn:disabled { opacity: 0.3; cursor: default; }
+    .stepper-step-info { font-size: 0.8rem; color: var(--text-muted); flex: 1; }
+    .stepper-node-info {
+      padding: 8px 18px 10px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; display: flex; flex-direction: column; gap: 5px;
+    }
+    .stepper-node-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .stepper-node-name { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+    .stepper-fight-info { font-size: 0.72rem; color: var(--text-muted); }
+    .stepper-hp-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85rem; }
+    .stepper-hp-val { font-family: 'Courier New', monospace; font-weight: 600; }
+    .stepper-gold-val { font-family: 'Courier New', monospace; font-weight: 600; color: var(--gold-light); }
+    .stepper-deltas { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; }
+    .stepper-delta {
+      font-family: 'Courier New', monospace; font-size: 0.72rem;
+      padding: 2px 7px; border-radius: 3px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .stepper-delta.stepper-delta-pos { color: #6fd48a; border-color: rgba(111,212,138,0.35); background: rgba(111,212,138,0.08); }
+    .stepper-delta.stepper-delta-neg { color: #ec6b6b; border-color: rgba(236,107,107,0.35); background: rgba(236,107,107,0.08); }
+    .stepper-potion-chip {
+      width: 32px; height: 32px; background: rgba(74,159,212,0.1); border: 1px solid rgba(74,159,212,0.3);
+      border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+      overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.12s;
+      font-size: 0.65rem; color: #7bc4e8;
+    }
+    .stepper-potion-chip:hover { border-color: #7bc4e8; transform: scale(1.12); }
+    .stepper-potion-chip img { width: 28px; height: 28px; object-fit: contain; }
+    .stepper-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    .stepper-section { padding: 10px 18px 12px; border-bottom: 1px solid rgba(42,58,92,0.5); }
+    .stepper-section:last-child { border-bottom: none; }
+    .stepper-sec-title {
+      font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .stepper-reward-group { display: flex; flex-direction: column; gap: 6px; }
+    .stepper-reward-group + .stepper-reward-group { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(42,58,92,0.5); }
+    .stepper-reward-group-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .stepper-choices { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+    .stepper-choice-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .stepper-choice-card {
+      width: 136px; border-radius: 5px; border: 2px solid transparent;
+      overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .stepper-choice-card.chosen {
+      border-color: var(--gold);
+      box-shadow: 0 0 10px rgba(201,162,39,0.5);
+    }
+    .stepper-choice-card.removal { border-color: rgba(220,50,50,0.4); }
+    .stepper-choice-card img { width: 100%; height: auto; display: block; }
+    .stepper-choice-card .card-img-placeholder { font-size: 0.65rem; padding: 10px 6px; min-height: 60px; display:flex; align-items:center; justify-content:center; }
+    .stepper-choice-lbl { font-size: 0.6rem; color: var(--text-muted); text-align: center; max-width: 136px; }
+    .stepper-choice-lbl.chosen-lbl { color: var(--gold-light); font-weight: 600; }
+    .stepper-transform-pair { display: flex; align-items: center; gap: 8px; }
+    .stepper-transform-arrow { font-size: 1.4rem; color: var(--text-muted); flex-shrink: 0; }
+    .stepper-skip-card {
+      width: 136px; height: 172px; border: 2px dashed var(--border); border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: var(--text-muted);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .stepper-skip-card.chosen {
+      border-color: var(--gold); border-style: solid;
+      color: var(--gold-light); background: rgba(201,162,39,0.07);
+    }
+    .stepper-shop-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .stepper-shop-row:last-child { margin-bottom: 0; }
+    .stepper-shop-sub { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 2px; }
+    .stepper-shop-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .stepper-shop-relic {
+      position: relative; width: 52px; height: 52px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      overflow: visible; cursor: pointer; transition: border-color 0.15s, transform 0.12s;
+    }
+    .stepper-shop-relic img { width: 44px; height: 44px; object-fit: contain; }
+    .stepper-shop-relic:hover { border-color: var(--gold-dim); transform: scale(1.08); }
+    .stepper-shop-relic.bought { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,162,39,0.45); }
+    .stepper-shop-potion {
+      position: relative; width: 46px; height: 46px; background: rgba(74,159,212,0.08);
+      border: 1px solid rgba(74,159,212,0.25); border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      overflow: visible; cursor: pointer; font-size: 0.6rem; color: #7bc4e8;
+      transition: border-color 0.15s, transform 0.12s;
+    }
+    .stepper-shop-potion img { width: 38px; height: 38px; object-fit: contain; }
+    .stepper-shop-potion:hover { border-color: #7bc4e8; transform: scale(1.08); }
+    .stepper-shop-potion.bought { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,162,39,0.45); }
+    .stepper-shop-badge {
+      position: absolute; top: -6px; right: -6px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--gold); color: #1a1a2e;
+      font-size: 0.6rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .stepper-relics-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .stepper-relic-chip {
+      width: 38px; height: 38px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+      overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.12s;
+    }
+    .stepper-relic-chip:hover { border-color: var(--gold-dim); transform: scale(1.12); }
+    .stepper-relic-chip img { width: 34px; height: 34px; object-fit: contain; }
+    .stepper-relic-chip.new-relic { border-color: var(--gold-dim); box-shadow: 0 0 5px rgba(201,162,39,0.4); }
+    .stepper-deck-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+      gap: 6px;
+    }
+    .stepper-card-wrap {
+      position: relative; border-radius: 4px; overflow: hidden;
+      transition: transform 0.12s;
+    }
+    .stepper-card-wrap .card-enchant-icon,
+    .stepper-choice-card .card-enchant-icon {
+      padding: 1px;
+      border-width: 1px;
+      top: 3px;
+      right: 3px;
+    }
+    .stepper-card-wrap .card-enchant-icon img,
+    .stepper-choice-card .card-enchant-icon img {
+      width: 15px;
+      height: 15px;
+    }
+    .stepper-card-wrap:hover { transform: translateY(-2px) scale(1.05); z-index: 2; box-shadow: 0 4px 14px rgba(0,0,0,0.5); }
+    .stepper-card-wrap img { width: 100%; height: auto; display: block; border-radius: 3px; }
+    .stepper-card-wrap .card-img-placeholder { font-size: 0.55rem; padding: 6px 4px; }
   </style>
 </head>
 <body>
@@ -1070,7 +1262,7 @@
     <div class="header-left">
       <img class="header-icon" src="../Slay_the_Spire_2_icon.webp" alt="STS2" style="width:1.8rem;height:1.8rem;object-fit:contain;" />
       <div>
-        <div class="header-title">STS2 Stats</div>
+        <div class="header-title">STS2 Dashboard</div>
         <button class="header-folder-btn" id="headerFolderBtn" title="Show history path">History Path</button>
         <div class="header-folder" id="headerFolder" style="display:none;"></div>
       </div>
@@ -1125,8 +1317,8 @@
       <div class="filter-group" style="min-width:auto;">
         <label class="filter-label">Mode</label>
         <div class="mode-toggle" id="filterModeToggle">
-          <button class="mode-toggle-btn active" data-mode="all">All</button>
-          <button class="mode-toggle-btn" data-mode="solo">Solo</button>
+          <button class="mode-toggle-btn" data-mode="all">All</button>
+          <button class="mode-toggle-btn active" data-mode="solo">Solo</button>
           <button class="mode-toggle-btn" data-mode="coop">Co-op</button>
         </div>
       </div>
@@ -1188,6 +1380,18 @@
           </div>
           <button class="btn btn-secondary search-filter-clear-btn" id="searchFilterClearAll" style="display:none;">Clear</button>
           <div class="search-filter-dropdown" id="searchFilterDropdown" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="filter-group search-filter-group">
+        <label class="filter-label" style="color:#e07070;">Exclude Card / Relic</label>
+        <div class="search-filter-outer" id="excludeFilterWrap">
+          <div class="tag-input-wrap" id="excludeTagInputWrap">
+            <input type="text" id="excludeFilterInput" class="tag-input-field"
+              placeholder="Search cards &amp; relics…" autocomplete="off" spellcheck="false" />
+          </div>
+          <button class="btn btn-secondary search-filter-clear-btn" id="excludeFilterClearAll" style="display:none;">Clear</button>
+          <div class="search-filter-dropdown" id="excludeFilterDropdown" style="display:none;"></div>
         </div>
       </div>
 
@@ -1265,6 +1469,7 @@
     <div class="detail-nav" style="display:flex;align-items:center;gap:10px;">
       <button class="btn btn-secondary" id="backBtn">← Back to Runs</button>
       <button class="btn btn-secondary fav-btn-detail" id="detailFavBtn">☆ Favorite</button>
+      <button class="btn btn-secondary" id="deckStepperBtn">🃏 Deck Stepper</button>
       <button class="btn btn-secondary" id="detailCopyBtn">📋 Copy Run</button>
       <button class="btn btn-secondary" id="detailPastebinBtn">📤 Pastebin</button>
     </div>
@@ -1398,6 +1603,40 @@
     </div>
   </div>
 
+  <!-- Potion Popup -->
+  <div id="potionPopup" class="popup-overlay" style="display:none;">
+    <div class="popup-box">
+      <button class="popup-close" id="potionPopupClose">✕</button>
+      <div class="popup-content">
+        <div class="popup-relic-img-wrap" id="popupPotionImgWrap"></div>
+        <div class="popup-relic-info">
+          <div class="popup-relic-name" id="popupPotionName"></div>
+          <div class="popup-relic-meta" id="popupPotionMeta"></div>
+          <div class="popup-relic-desc" id="popupPotionDesc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DECK STEPPER OVERLAY
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="deckStepperOverlay" style="display:none;">
+    <div id="deckStepperModal">
+      <div class="stepper-header">
+        <span id="stepperTitle">Deck Build Stepper</span>
+        <div id="stepperPlayerTabs" class="stepper-player-tabs" style="display:none;"></div>
+        <button class="stepper-close" id="stepperCloseBtn" title="Close (Esc)">✕</button>
+      </div>
+      <div class="stepper-nav">
+        <button class="stepper-nav-btn" id="stepperPrevBtn" title="Previous (←)">&#8592;</button>
+        <span class="stepper-step-info" id="stepperStepInfo"></span>
+        <button class="stepper-nav-btn" id="stepperNextBtn" title="Next (→)">&#8594;</button>
+      </div>
+      <div id="stepperBody" class="stepper-body"></div>
+    </div>
+  </div>
+
   <!-- Error state -->
   <div id="errorState" style="display:none; padding:40px;">
     <div class="error-msg" id="errorMsg"></div>
@@ -1411,7 +1650,7 @@
     <div class="help-box">
       <button class="popup-close" id="helpClose">✕</button>
       <div class="help-box-header">
-        <h2>STS2 Stats — Help</h2>
+        <h2>STS2 Dashboard — Help</h2>
         <p>A quick reference for all features in this app.</p>
       </div>
       <div class="help-box-body">

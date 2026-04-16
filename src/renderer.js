@@ -30,9 +30,8 @@ function outcomeLabel(run) {
 
   const enc   = parseEncounter(run.killed_by_encounter);
   const event = parseEncounter(run.killed_by_event);
-
   const cause = enc || event || 'Unknown';
-  return { label: cause, type: 'loss' };
+  return { label: 'Defeat', type: 'loss', cause };
 }
 
 // ── Time formatting ───────────────────────────────────────────────────────────
@@ -57,6 +56,7 @@ let relicsMap       = new Map(); // normalized name → relic object
 let cardsMap        = new Map(); // normalized name → card object
 let enchantmentsMap = new Map(); // normalized name → enchantment object
 let eventsMap       = new Map(); // normalized name → event object
+let potionsMap      = new Map(); // normalized name → potion object
 
 function normalizeName(str) {
   return str.toLowerCase()
@@ -68,20 +68,23 @@ function normalizeName(str) {
 
 async function loadAssetData() {
   try {
-    const [rRes, cRes, eRes, evRes] = await Promise.all([
+    const [rRes, cRes, eRes, evRes, pRes] = await Promise.all([
       fetch('appdata://data/relics.json'),
       fetch('appdata://data/cards.json'),
       fetch('appdata://data/enchantments.json'),
       fetch('appdata://data/events.json'),
+      fetch('appdata://data/potions.json'),
     ]);
     const relics       = await rRes.json();
     const cards        = await cRes.json();
     const enchantments = await eRes.json();
     const events       = await evRes.json();
+    const potions      = await pRes.json();
     for (const r of relics)       relicsMap.set(normalizeName(r.name), r);
     for (const c of cards)        cardsMap.set(normalizeName(c.name), c);
     for (const e of enchantments) enchantmentsMap.set(normalizeName(e.name), e);
     for (const ev of events)      eventsMap.set(normalizeName(ev.name), ev);
+    for (const p of potions)      potionsMap.set(normalizeName(p.name), p);
   } catch (e) {
     console.warn('Asset data load failed:', e);
   }
@@ -109,6 +112,11 @@ function lookupCardData(id) {
 function lookupEnchantmentData(id) {
   const name = idToDisplayName(id);
   return enchantmentsMap.get(normalizeName(name)) || null;
+}
+
+function lookupPotionData(id) {
+  const name = idToDisplayName(id);
+  return potionsMap.get(normalizeName(name)) || null;
 }
 
 // ── Ascension filter ─────────────────────────────────────────────────────────
@@ -183,6 +191,58 @@ function renderSearchTokens() {
   clearBtn.style.display = currentFilters.searchTokens.length > 0 ? '' : 'none';
 }
 
+function renderExcludeTokens() {
+  const wrap     = document.getElementById('excludeTagInputWrap');
+  const input    = document.getElementById('excludeFilterInput');
+  const clearBtn = document.getElementById('excludeFilterClearAll');
+  wrap.querySelectorAll('.search-token').forEach(el => el.remove());
+  for (const token of currentFilters.excludeTokens) {
+    const el = document.createElement('span');
+    el.className = 'search-token search-token--exclude';
+    el.dataset.normalizedName = token.normalizedName;
+    if (token.type === 'relic' && token.imageFile) {
+      el.title = token.name;
+      el.innerHTML = `<img src="appdata://images/relic_images/${escHtml(token.imageFile)}" alt="${escHtml(token.name)}" /><span class="search-token-x">×</span>`;
+    } else {
+      el.innerHTML = `<span class="search-token-name">${escHtml(token.name)}</span><span class="search-token-x">×</span>`;
+    }
+    wrap.insertBefore(el, input);
+  }
+  clearBtn.style.display = currentFilters.excludeTokens.length > 0 ? '' : 'none';
+}
+
+function updateExcludeDropdown() {
+  const input    = document.getElementById('excludeFilterInput');
+  const dropdown = document.getElementById('excludeFilterDropdown');
+  const q = input.value.trim();
+  if (!q) { dropdown.style.display = 'none'; return; }
+
+  const activeSet = new Set(currentFilters.excludeTokens.map(t => t.normalizedName));
+  const results   = searchCardsAndRelics(q).filter(r => !activeSet.has(r.normalizedName));
+
+  if (!results.length) {
+    dropdown.innerHTML = `<div class="search-dropdown-empty">No matches</div>`;
+    dropdown.style.display = '';
+    return;
+  }
+
+  dropdown.innerHTML = results.map(r => {
+    const icon = r.type === 'relic' && r.imageFile
+      ? `<img class="search-dropdown-icon" src="appdata://images/relic_images/${escHtml(r.imageFile)}" alt="" />`
+      : `<div class="search-dropdown-card-stub">C</div>`;
+    return `<div class="search-dropdown-item"
+      data-normalized="${escHtml(r.normalizedName)}"
+      data-type="${r.type}"
+      data-name="${escHtml(r.name)}"
+      data-img-file="${escHtml(r.imageFile)}">
+      ${icon}
+      <span class="search-dropdown-name">${escHtml(r.name)}</span>
+      <span class="search-dropdown-badge ${r.type}">${r.type === 'relic' ? 'Relic' : 'Card'}</span>
+    </div>`;
+  }).join('');
+  dropdown.style.display = '';
+}
+
 function updateSearchDropdown() {
   const input    = document.getElementById('searchFilterInput');
   const dropdown = document.getElementById('searchFilterDropdown');
@@ -220,10 +280,11 @@ function updateSearchDropdown() {
 const currentFilters = {
   abandoned: 'include',
   minDuration: 0,
-  mode: 'all',         // 'all' | 'solo' | 'coop'
+  mode: 'solo',        // 'all' | 'solo' | 'coop'
   winOnly: false,
   character: 'all',
   searchTokens: [],    // { type, normalizedName, name, imageFile }
+  excludeTokens: [],   // { type, normalizedName, name, imageFile }
   ascLevels: null,     // null = all; Set<number> = specific levels
   favoritedOnly: false,
 };
@@ -277,6 +338,20 @@ function applyFilters(allRuns, filters) {
       }
     }
 
+    if (filters.excludeTokens && filters.excludeTokens.length > 0) {
+      const allRelics = (run.players || []).flatMap(p => p.relics ?? []);
+      const allDeck   = (run.players || []).flatMap(p => p.deck   ?? []);
+      for (const token of filters.excludeTokens) {
+        let found = false;
+        if (token.type === 'relic') {
+          found = allRelics.some(r => normalizeName(idToDisplayName(r.id)) === token.normalizedName);
+        } else {
+          found = allDeck.some(c => normalizeName(idToDisplayName(c.id)) === token.normalizedName);
+        }
+        if (found) return false;
+      }
+    }
+
     return true;
   });
 }
@@ -319,6 +394,7 @@ function computeStats(runs) {
     const enc   = parseEncounter(run.killed_by_encounter);
     const event = parseEncounter(run.killed_by_event);
     const cause = enc || event || 'Unknown';
+    if (cause.toLowerCase() === 'neow') continue;
     deathMap.set(cause, (deathMap.get(cause) || 0) + 1);
   }
   const topDeaths = [...deathMap.entries()]
@@ -764,6 +840,7 @@ function openNodePopup(nodeIdx) {
 
 function showRunDetail(run) {
   _currentDetailRun = run;
+  _detailPlayerIdx  = 0;
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('runDetailView').style.display = '';
   document.getElementById('runDetailView').scrollTop = 0;
@@ -793,6 +870,7 @@ function showRunDetail(run) {
       tabsEl.querySelectorAll('.player-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const idx = parseInt(btn.dataset.playerIdx, 10);
+      _detailPlayerIdx = idx;
       renderHpGraph(run, idx);
       renderDetailRelics(players[idx]?.relics || []);
       renderDetailDeck(players[idx]?.deck || []);
@@ -890,6 +968,7 @@ const CARD_RARITY_ORDER = { Basic: 0, Token: 0, Status: 0, Common: 1, Uncommon: 
 let _deckSorted = false;       // current toggle state
 let _currentDeck = [];         // original order, preserved for unsorted restore
 let _currentDetailRun = null;  // run currently shown in detail view
+let _detailPlayerIdx  = 0;    // which player tab is active in detail view
 
 function cardSortKey(card) {
   const id   = card.id || card;
@@ -1045,6 +1124,31 @@ function closeEventPopup() {
   document.getElementById('eventPopup').style.display = 'none';
 }
 
+function openPotionPopup(id) {
+  const name = typeof id === 'string' ? idToDisplayName(id) : String(id);
+  const data = typeof id === 'string' ? lookupPotionData(id) : null;
+
+  const imgWrap = document.getElementById('popupPotionImgWrap');
+  imgWrap.innerHTML = data?.imageFile
+    ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
+    : `<div class="relic-icon-placeholder large">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
+
+  document.getElementById('popupPotionName').textContent = data?.name || name;
+
+  const metaParts = [];
+  if (data?.rarity)    metaParts.push(data.rarity);
+  if (data?.character) metaParts.push(data.character);
+  document.getElementById('popupPotionMeta').textContent = metaParts.join(' · ');
+
+  document.getElementById('popupPotionDesc').textContent = data?.description || '—';
+
+  document.getElementById('potionPopup').style.display = 'flex';
+}
+
+function closePotionPopup() {
+  document.getElementById('potionPopup').style.display = 'none';
+}
+
 function openEnchantmentPopup(data) {
   const imgWrap = document.getElementById('popupRelicImgWrap');
   imgWrap.innerHTML = data.imageFile
@@ -1171,7 +1275,7 @@ function renderAllRuns(runs) {
 
     const resultBadge = `<span class="badge ${badgeClass}">${escHtml(outcome.label)}</span>`;
     const deathCell   = outcome.type === 'loss'
-      ? `<span class="run-death">${escHtml(outcome.label)}</span>`
+      ? `<span class="run-death">${escHtml(outcome.cause)}</span>`
       : `<span style="color:var(--text-muted);">—</span>`;
 
     return `
@@ -1276,11 +1380,13 @@ let _relicPairMinSamples = 3;
 let _cardDuoMinSamples   = 3;
 let _cardTrioMinSamples  = 3;
 let _eventMinSamples     = 3;
+let _ancientMinSamples   = 1;
 let _upgradeMinSamples   = 3;
 
 let _relicSortDesc     = true;
 let _cardSortDesc      = true;
 let _eventSortDesc     = true;
+let _ancientSortDesc   = true;
 let _upgradeSortDesc   = true;
 let _relicPairSortDesc = true;
 let _cardDuoSortDesc   = true;
@@ -1506,6 +1612,7 @@ function computeInsights(runs) {
     const seen = new Set();
     const nodes = parseRunMap(run);
     for (const node of nodes) {
+      if (node.category === 'ancient') continue;
       if (node.category !== 'event' && !node.modelId?.startsWith('EVENT.')) continue;
       let displayName = null;
       if (node.modelId && node.modelId.startsWith('EVENT.')) {
@@ -1526,6 +1633,29 @@ function computeInsights(runs) {
     .map(s => ({ ...s, wr: s.w / s.t }))
     .sort((a, b) => b.wr - a.wr);
   const eventMaxSamples = eventRankingAll.length ? Math.max(...eventRankingAll.map(e => e.t)) : 0;
+
+  // ── Ancient win rate ──────────────────────────────────────────────────────
+  const ancientWrMap = new Map();
+  for (const run of runs) {
+    const seen = new Set();
+    const nodes = parseRunMap(run);
+    for (const node of nodes) {
+      if (node.category !== 'ancient') continue;
+      if (!node.modelId?.startsWith('EVENT.')) continue;
+      const displayName = idToDisplayName(node.modelId);
+      const norm = normalizeName(displayName);
+      if (seen.has(norm)) continue; seen.add(norm);
+      if (!ancientWrMap.has(norm)) {
+        const ev = eventsMap.get(norm);
+        ancientWrMap.set(norm, { name: ev?.name || displayName, w: 0, t: 0 });
+      }
+      const s = ancientWrMap.get(norm); s.t++; if (run.win) s.w++;
+    }
+  }
+  const ancientRankingAll = [...ancientWrMap.values()]
+    .map(s => ({ ...s, wr: s.w / s.t }))
+    .sort((a, b) => b.wr - a.wr);
+  const ancientMaxSamples = ancientRankingAll.length ? Math.max(...ancientRankingAll.map(e => e.t)) : 0;
 
   // ── Pick rates ────────────────────────────────────────────────────────────
   const relicPickRate = [...relicWrMap.values()]
@@ -1561,6 +1691,7 @@ function computeInsights(runs) {
     cardPairRankingAll,  cardPairMaxSamples,
     cardTrioRankingAll,  cardTrioMaxSamples,
     eventRankingAll,     eventMaxSamples,
+    ancientRankingAll,   ancientMaxSamples,
     upgradeRankingAll,   upgradeMaxSamples,
     strikeImpact, defendImpact, deckSizeData,
     relicPickRate, cardPickRate,
@@ -1612,11 +1743,11 @@ function renderInsightsView(runs) {
   const eventLink = (name) =>
     `<span class="insight-event-link" data-insight-event="${escHtml(name)}">${escHtml(name)}</span>`;
   const card = (title, body, note = '') => `
-    <div class="card insight-card">
+    <div class="card insight-card collapsed">
       <div class="card-header" style="display:flex;align-items:center;">
         <h2 style="flex:1;margin:0">${title}</h2>${note ? `<span class="insight-note">${note}</span>` : ''}
       </div>
-      ${body}
+      <div class="insight-card-body">${body}</div>
     </div>`;
   const emptyState = '<div class="empty-state" style="padding:16px">No entries meet the minimum sample threshold.</div>';
   const tableWrap = (thead, tbody) => tbody
@@ -1630,6 +1761,7 @@ function renderInsightsView(runs) {
   _cardDuoMinSamples   = Math.min(_cardDuoMinSamples,   ins.cardPairMaxSamples);
   _cardTrioMinSamples  = Math.min(_cardTrioMinSamples,  ins.cardTrioMaxSamples);
   _eventMinSamples     = Math.min(_eventMinSamples,     ins.eventMaxSamples);
+  _ancientMinSamples   = Math.min(_ancientMinSamples,   ins.ancientMaxSamples);
   _upgradeMinSamples   = Math.min(_upgradeMinSamples,   ins.upgradeMaxSamples);
 
   const buildRelicWrRows = (minN) => {
@@ -1652,6 +1784,14 @@ function renderInsightsView(runs) {
     const rows = ins.eventRankingAll.filter(e => e.t >= minN);
     if (!_eventSortDesc) rows.reverse();
     return rows.slice(0, 25).map((e, i) =>
+      `<tr><td class="insight-rank">${i+1}</td><td>${eventLink(e.name)}</td><td>${wrBar(e.wr, e.t)}</td></tr>`
+    ).join('');
+  };
+
+  const buildAncientWrRows = (minN) => {
+    const rows = ins.ancientRankingAll.filter(e => e.t >= minN);
+    if (!_ancientSortDesc) rows.reverse();
+    return rows.map((e, i) =>
       `<tr><td class="insight-rank">${i+1}</td><td>${eventLink(e.name)}</td><td>${wrBar(e.wr, e.t)}</td></tr>`
     ).join('');
   };
@@ -1715,10 +1855,15 @@ function renderInsightsView(runs) {
       ${sortBtn(sortKey, sortDesc)}
     </div>`;
 
-  // ── 1b. Event Win Rate ────────────────────────────────────────────────────
-  sections.push(card('Event Win Rate',
-    mkSlider('eventWrSlider', 'eventWrVal', ins.eventMaxSamples, _eventMinSamples, 'eventWr', _eventSortDesc) +
-    `<div id="eventWrTableWrap">${tableWrap('<tr><th>#</th><th>Event</th><th>Win Rate</th></tr>', buildEventWrRows(_eventMinSamples))}</div>`));
+  // ── 1b. Event & Ancient Win Rate ──────────────────────────────────────────
+  sections.push(`<div class="two-col">
+    ${card('Event Win Rate',
+      mkSlider('eventWrSlider', 'eventWrVal', ins.eventMaxSamples, _eventMinSamples, 'eventWr', _eventSortDesc) +
+      `<div id="eventWrTableWrap">${tableWrap('<tr><th>#</th><th>Event</th><th>Win Rate</th></tr>', buildEventWrRows(_eventMinSamples))}</div>`)}
+    ${card('Ancient Win Rate',
+      mkSlider('ancientWrSlider', 'ancientWrVal', ins.ancientMaxSamples, _ancientMinSamples, 'ancientWr', _ancientSortDesc) +
+      `<div id="ancientWrTableWrap">${tableWrap('<tr><th>#</th><th>Ancient</th><th>Win Rate</th></tr>', buildAncientWrRows(_ancientMinSamples))}</div>`)}
+  </div>`);
 
   sections.push(card('Best Relic Pairs',
     mkSlider('relicPairSlider', 'relicPairVal', ins.relicPairMaxSamples, _relicPairMinSamples, 'relicPair', _relicPairSortDesc) +
@@ -1839,6 +1984,8 @@ function renderInsightsView(runs) {
                  render: () => tableWrap('<tr><th>#</th><th>Card</th><th>Win Rate</th></tr>', buildCardWrRows(_cardMinSamples)) },
     eventWr:   { get: () => _eventSortDesc,   set: v => { _eventSortDesc = v; },   wrapId: 'eventWrTableWrap',
                  render: () => tableWrap('<tr><th>#</th><th>Event</th><th>Win Rate</th></tr>', buildEventWrRows(_eventMinSamples)) },
+    ancientWr: { get: () => _ancientSortDesc, set: v => { _ancientSortDesc = v; }, wrapId: 'ancientWrTableWrap',
+                 render: () => tableWrap('<tr><th>#</th><th>Ancient</th><th>Win Rate</th></tr>', buildAncientWrRows(_ancientMinSamples)) },
     upgrade:   { get: () => _upgradeSortDesc, set: v => { _upgradeSortDesc = v; }, wrapId: 'upgradeWrap',
                  render: () => tableWrap('<tr><th>#</th><th>Card</th><th>Base WR</th><th>Upgraded WR</th><th>Delta</th></tr>', buildUpgradeRows(_upgradeMinSamples)) },
     relicPair: { get: () => _relicPairSortDesc, set: v => { _relicPairSortDesc = v; }, wrapId: 'relicPairWrap',
@@ -1902,6 +2049,10 @@ function renderInsightsView(runs) {
   wireSlider('eventWrSlider', 'eventWrVal', 'eventWrTableWrap', _eventMinSamples,
     v => { _eventMinSamples = v; }, buildEventWrRows,
     '<tr><th>#</th><th>Event</th><th>Win Rate</th></tr>');
+
+  wireSlider('ancientWrSlider', 'ancientWrVal', 'ancientWrTableWrap', _ancientMinSamples,
+    v => { _ancientMinSamples = v; }, buildAncientWrRows,
+    '<tr><th>#</th><th>Ancient</th><th>Win Rate</th></tr>');
 
   wireSlider('upgradeSlider', 'upgradeVal', 'upgradeWrap', _upgradeMinSamples,
     v => { _upgradeMinSamples = v; }, buildUpgradeRows,
@@ -2083,8 +2234,27 @@ async function init() {
     if (e.target === document.getElementById('eventPopup')) closeEventPopup();
   });
 
+  // Close potion popup
+  document.getElementById('potionPopupClose').addEventListener('click', closePotionPopup);
+  document.getElementById('potionPopup').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('potionPopup')) closePotionPopup();
+  });
+
   // Insights: relic, card, event clicks + sort toggle via event delegation
   document.getElementById('insightsContent').addEventListener('click', (e) => {
+    // Collapse/expand card on header click
+    const cardHeader = e.target.closest('.insight-card .card-header');
+    if (cardHeader && !e.target.closest('[data-sort-toggle]')) {
+      const clickedCard = cardHeader.closest('.insight-card');
+      const twoCol = clickedCard.closest('.two-col');
+      const targets = twoCol
+        ? [...twoCol.querySelectorAll('.insight-card')]
+        : [clickedCard];
+      const collapsed = !clickedCard.classList.contains('collapsed');
+      targets.forEach(c => c.classList.toggle('collapsed', collapsed));
+      return;
+    }
+
     // Sort toggle — check first so button clicks don't bubble to popup handlers
     const sortToggleEl = e.target.closest('[data-sort-toggle]');
     if (sortToggleEl && _insightSortHandlers) {
@@ -2185,8 +2355,14 @@ async function init() {
   });
 
   document.addEventListener('keydown', (e) => {
+    if (_stepperOpen) {
+      if (e.key === 'ArrowLeft')  { navigateStepper(-1); e.preventDefault(); return; }
+      if (e.key === 'ArrowRight') { navigateStepper(1);  e.preventDefault(); return; }
+      if (e.key === 'Escape')     { closeDeckStepper(); return; }
+      return;
+    }
     if (e.key === 'Escape') {
-      closeRelicPopup(); closeCardPopup(); closeNodePopup();
+      closeRelicPopup(); closeCardPopup(); closeNodePopup(); closePotionPopup();
       legendPopup.style.display = 'none';
       helpOverlay.style.display = 'none';
     }
@@ -2198,10 +2374,11 @@ async function init() {
     // Reset filter state
     currentFilters.abandoned     = 'include';
     currentFilters.minDuration   = 0;
-    currentFilters.mode          = 'all';
+    currentFilters.mode          = 'solo';
     currentFilters.winOnly       = false;
     currentFilters.character     = 'all';
     currentFilters.searchTokens  = [];
+    currentFilters.excludeTokens = [];
     currentFilters.ascLevels     = null;
     currentFilters.favoritedOnly = false;
 
@@ -2215,12 +2392,14 @@ async function init() {
 
     // Mode toggle
     document.querySelectorAll('.mode-toggle-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.mode === 'all');
+      b.classList.toggle('active', b.dataset.mode === 'solo');
     });
 
     // Clear search tokens
     document.getElementById('tagInputWrap').querySelectorAll('.search-token').forEach(t => t.remove());
     document.getElementById('searchFilterClearAll').style.display = 'none';
+    document.getElementById('excludeTagInputWrap').querySelectorAll('.search-token').forEach(t => t.remove());
+    document.getElementById('excludeFilterClearAll').style.display = 'none';
 
     // Ascension: check all
     document.getElementById('ascCheckboxList').querySelectorAll('input[type="checkbox"]').forEach(cb => {
@@ -2272,6 +2451,8 @@ async function init() {
   document.getElementById('detailCopyBtn').addEventListener('click', async (e) => {
     if (_currentDetailRun) await copyRunToClipboard(_currentDetailRun, e.currentTarget);
   });
+
+  initDeckStepper();
 
   // ── Pastebin export ───────────────────────────────────────────────────────
   document.getElementById('detailPastebinBtn').addEventListener('click', async () => {
@@ -2464,6 +2645,55 @@ async function init() {
   document.getElementById('searchFilterClearAll').addEventListener('click', async () => {
     currentFilters.searchTokens = [];
     renderSearchTokens();
+    await loadAndRender();
+  });
+
+  // ── Exclude card/relic filter ────────────────────────────────────────────
+  const excludeInput    = document.getElementById('excludeFilterInput');
+  const excludeDropdown = document.getElementById('excludeFilterDropdown');
+
+  excludeInput.addEventListener('input', updateExcludeDropdown);
+  excludeInput.addEventListener('focus', updateExcludeDropdown);
+  excludeInput.addEventListener('blur', () => {
+    setTimeout(() => { excludeDropdown.style.display = 'none'; }, 160);
+  });
+  excludeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { excludeDropdown.style.display = 'none'; excludeInput.blur(); }
+  });
+
+  excludeDropdown.addEventListener('mousedown', async (e) => {
+    const item = e.target.closest('.search-dropdown-item');
+    if (!item) return;
+    e.preventDefault();
+    const nn = item.dataset.normalized;
+    if (currentFilters.excludeTokens.some(t => t.normalizedName === nn)) return;
+    currentFilters.excludeTokens.push({
+      type: item.dataset.type,
+      normalizedName: nn,
+      name: item.dataset.name,
+      imageFile: item.dataset.imgFile || '',
+    });
+    excludeInput.value = '';
+    excludeDropdown.style.display = 'none';
+    renderExcludeTokens();
+    await loadAndRender();
+  });
+
+  document.getElementById('excludeTagInputWrap').addEventListener('click', async (e) => {
+    const token = e.target.closest('.search-token');
+    if (!token) {
+      excludeInput.focus();
+      return;
+    }
+    const nn = token.dataset.normalizedName;
+    currentFilters.excludeTokens = currentFilters.excludeTokens.filter(t => t.normalizedName !== nn);
+    renderExcludeTokens();
+    await loadAndRender();
+  });
+
+  document.getElementById('excludeFilterClearAll').addEventListener('click', async () => {
+    currentFilters.excludeTokens = [];
+    renderExcludeTokens();
     await loadAndRender();
   });
 }
@@ -2663,5 +2893,843 @@ document.getElementById('updateCloseBtn').addEventListener('click', () => {
 document.getElementById('updateResourcesBtn').addEventListener('click', () => {
   runUpdateResources();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DECK BUILD STEPPER
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _stepperData    = [];   // array of step objects built by buildStepperData()
+let _stepperIdx     = 0;    // current step index
+let _stepperOpen    = false;
+
+// ── Card matching helper ──────────────────────────────────────────────────────
+// During backward reconstruction, find a card in `deck` matching `cardRef`.
+// Priority: exact floor match → node floor match → highest-floor copy → first copy.
+function findCardForBackward(deck, cardRef, nodeFloor) {
+  const id = cardRef?.id || cardRef;
+  if (!id) return -1;
+  const candidates = [];
+  for (let i = 0; i < deck.length; i++) {
+    if ((deck[i].id || deck[i]) === id) candidates.push(i);
+  }
+  if (candidates.length === 0) return -1;
+  if (candidates.length === 1) return candidates[0];
+
+  // Exact floor match
+  const exact = candidates.filter(i => (deck[i].floor_added_to_deck ?? -1) === (cardRef.floor_added_to_deck ?? -2));
+  if (exact.length > 0) return exact[0];
+
+  // Node floor match
+  const nodeMatch = candidates.filter(i => (deck[i].floor_added_to_deck ?? -1) === nodeFloor);
+  if (nodeMatch.length > 0) return nodeMatch[0];
+
+  // Highest floor fallback
+  return candidates.reduce((best, i) =>
+    (deck[i].floor_added_to_deck ?? -1) > (deck[best].floor_added_to_deck ?? -1) ? i : best
+  , candidates[0]);
+}
+
+// ── Stepper data builder ──────────────────────────────────────────────────────
+// Returns an array of step objects, one per map node that has any deck/relic
+// interaction (or any node, so the player can see every stop).
+function buildStepperData(run, playerIdx) {
+  const actHistory = run.map_point_history || [];
+  const player     = run.players?.[playerIdx] || run.players?.[0] || {};
+  const finalDeck  = (player.deck || []).map(c => ({ ...c }));
+
+  // Collect all nodes in order
+  const allNodes = [];
+  for (let a = 0; a < actHistory.length; a++) {
+    for (let n = 0; n < actHistory[a].length; n++) {
+      allNodes.push({ actIdx: a, nodeInAct: n, raw: actHistory[a][n] });
+    }
+  }
+
+  const N = allNodes.length;
+
+  // ── Backward pass: reconstruct deck state BEFORE each node ──────────────
+  // We start from the final deck and reverse-apply deltas node by node (backwards).
+  // deckBefore[i] = deck state BEFORE node i's changes.
+  const deckSnapshots = new Array(N + 1);
+  deckSnapshots[N] = finalDeck.map(c => ({ ...c })); // after last node
+
+  for (let i = N - 1; i >= 0; i--) {
+    const ps    = allNodes[i].raw.player_stats?.[playerIdx] ?? allNodes[i].raw.player_stats?.[0] ?? {};
+    const floor = i + 1;
+    const deck  = deckSnapshots[i + 1].map(c => ({ ...c }));
+
+    // Reverse cards_gained: remove them from deck
+    const gainedIds = new Set();
+    for (const gained of (ps.cards_gained || [])) {
+      const idx = findCardForBackward(deck, gained, floor);
+      if (idx !== -1) deck.splice(idx, 1);
+      if (gained?.id) gainedIds.add(gained.id);
+    }
+
+    // Reverse card_choices picked: remove the picked card.
+    // Skip cards already removed via cards_gained (shop purchases are tracked twice).
+    for (const ch of (ps.card_choices || [])) {
+      if (ch.was_picked && !gainedIds.has(ch.card?.id)) {
+        const idx = findCardForBackward(deck, ch.card, floor);
+        if (idx !== -1) deck.splice(idx, 1);
+      }
+    }
+
+    // Reverse cards_transformed: replace final_card back with original_card
+    for (const tx of (ps.cards_transformed || [])) {
+      const idx = findCardForBackward(deck, tx.final_card, floor);
+      if (idx !== -1) {
+        deck[idx] = { ...tx.original_card };
+      } else {
+        deck.push({ ...tx.original_card });
+      }
+    }
+
+    // Reverse cards_enchanted: restore to un-enchanted version
+    for (const enc of (ps.cards_enchanted || [])) {
+      const idx = findCardForBackward(deck, enc.card, floor);
+      if (idx !== -1) {
+        const copy = { ...deck[idx] };
+        delete copy.enchantment;
+        deck[idx] = copy;
+      }
+    }
+
+    // Reverse upgraded_cards (smith): downgrade by 1
+    for (const cardId of (ps.upgraded_cards || [])) {
+      const idx = findCardForBackward(deck, { id: cardId, floor_added_to_deck: undefined }, floor);
+      if (idx !== -1) {
+        const copy = { ...deck[idx] };
+        copy.current_upgrade_level = Math.max(0, (copy.current_upgrade_level || 1) - 1);
+        deck[idx] = copy;
+      }
+    }
+
+    // Reverse cards_removed: put them back
+    for (const removed of (ps.cards_removed || [])) {
+      deck.push({ ...removed });
+    }
+
+    // Reverse bought_colorless: remove those cards
+    for (const cardId of (ps.bought_colorless || [])) {
+      const idx = findCardForBackward(deck, { id: cardId }, floor);
+      if (idx !== -1) deck.splice(idx, 1);
+    }
+
+    deckSnapshots[i] = deck;
+  }
+
+  // ── Forward pass: track potions ───────────────────────────────────────────
+  // potionsBefore[i] = potions available before node i (snapshot at card-reward time for fights)
+  const potionSnapshots = new Array(N + 1);
+  potionSnapshots[0] = [];
+  for (let i = 0; i < N; i++) {
+    const ps = allNodes[i].raw.player_stats?.[playerIdx] ?? allNodes[i].raw.player_stats?.[0] ?? {};
+    let potions = [...(potionSnapshots[i] || [])];
+
+    // Apply: gained via choices (covers both fight rewards and shop purchases —
+    // shop purchases appear in potion_choices with was_picked=true, so don't
+    // read bought_potions to avoid double-counting).
+    for (const pc of (ps.potion_choices || [])) {
+      if (pc.was_picked) potions.push(pc.choice);
+    }
+    // Remove: used + discarded
+    for (const pu of (ps.potion_used || [])) {
+      const idx = potions.indexOf(pu);
+      if (idx !== -1) potions.splice(idx, 1);
+    }
+    for (const pd of (ps.potion_discarded || [])) {
+      const idx = potions.indexOf(pd);
+      if (idx !== -1) potions.splice(idx, 1);
+    }
+    potionSnapshots[i + 1] = potions;
+  }
+
+  // ── Build step objects ────────────────────────────────────────────────────
+  const steps = [];
+  for (let i = 0; i < N; i++) {
+    const { actIdx, raw } = allNodes[i];
+    const ps    = raw.player_stats?.[playerIdx] ?? raw.player_stats?.[0] ?? {};
+    const room  = raw.rooms?.[0] ?? {};
+    const floor = i + 1;
+
+    const mapType  = raw.map_point_type || 'event';
+    const roomType = room.room_type || mapType;
+    let category = mapType;
+    if (mapType === 'unknown') {
+      if      (roomType === 'monster')  category = 'unknown_fight';
+      else if (roomType === 'shop')     category = 'unknown_shop';
+      else if (roomType === 'treasure') category = 'unknown_treasure';
+      else                              category = 'event';
+    }
+
+    const isFight = ['monster', 'elite', 'boss', 'unknown_fight'].includes(category);
+
+    // HP snapshot: for fights, show post-fight HP (the stat at this node = after fight)
+    const hpVal     = ps.current_hp   ?? null;
+    const maxHpVal  = ps.max_hp      ?? null;
+    const currentGold = ps.current_gold ?? null;
+
+    // Potions: for fight nodes, same post-fight timing (after fight, before reward)
+    // potionSnapshots[i] = before node; potionSnapshots[i+1] = after node
+    // For fights, card rewards come after combat, so use potionSnapshots[i+1]
+    // For non-fights, use potionSnapshots[i] (before node actions)
+    const potions = isFight ? [...potionSnapshots[i + 1]] : [...potionSnapshots[i]];
+
+    // Relics: all relics with floor_added_to_deck <= floor
+    const relicsAtNode = (player.relics || []).filter(r => (r.floor_added_to_deck ?? 1) <= floor);
+
+    // Card choices
+    const cardChoices = ps.card_choices || [];
+    const anyPicked   = cardChoices.some(c => c.was_picked);
+
+    // Other deck changes at this node
+    const changes = [];
+    for (const c of (ps.cards_gained || [])) {
+      changes.push({ type: 'gained', card: c });
+    }
+    for (const c of (ps.cards_removed || [])) {
+      changes.push({ type: 'removed', card: c });
+    }
+    for (const c of (ps.cards_transformed || [])) {
+      changes.push({ type: 'transformed', original: c.original_card, final: c.final_card });
+    }
+    for (const c of (ps.cards_enchanted || [])) {
+      changes.push({ type: 'enchanted', card: c.card, enchantment: c.enchantment });
+    }
+    for (const id of (ps.upgraded_cards || [])) {
+      changes.push({ type: 'upgraded', cardId: id });
+    }
+    for (const id of (ps.bought_colorless || [])) {
+      changes.push({ type: 'bought', cardId: id });
+    }
+
+    steps.push({
+      nodeIdx: i,
+      floor,
+      actIdx,
+      category,
+      mapType,
+      roomType,
+      modelId:    room.model_id || null,
+      monsterIds: room.monster_ids || [],
+      isFight,
+      hpVal,
+      maxHpVal,
+      currentGold,
+      potions,
+      relicsAtNode,
+      deckBefore:  deckSnapshots[i],
+      cardChoices,
+      anyPicked,
+      changes,
+      eventChoices:    ps.event_choices    || [],
+      restChoices:     ps.rest_site_choices || [],
+      relicChoices:    ps.relic_choices    || [],
+      potionChoices:   ps.potion_choices   || [],
+      boughtColorless: ps.bought_colorless || [],
+      ancientChoices:  ps.ancient_choice   || [],
+    });
+  }
+
+  return steps;
+}
+
+// ── Card reward grouping ──────────────────────────────────────────────────────
+// Normal card rewards are ALWAYS blocks of 3 cards.
+// Any leftover cards at the front (N % 3) are special 1-card rewards that
+// appear before the normal reward — e.g., Thieving Hopper returning a stolen
+// card, or the Lantern Key event granting the Key.
+function groupCardChoices(choices) {
+  if (!choices.length) return [];
+
+  const N = choices.length;
+  const groups = [];
+  const specialCount = N % 3;
+
+  for (let i = 0; i < specialCount; i++) {
+    groups.push([choices[i]]);
+  }
+  for (let i = specialCount; i < N; i += 3) {
+    groups.push(choices.slice(i, i + 3));
+  }
+  return groups;
+}
+
+// ── Stepper open/close/navigate ───────────────────────────────────────────────
+
+let _stepperPlayerIdx = 0;   // which player's data the stepper is showing
+
+function openDeckStepper() {
+  const run = _currentDetailRun;
+  if (!run) return;
+  _stepperPlayerIdx = typeof _detailPlayerIdx === 'number' ? _detailPlayerIdx : 0;
+  _stepperData  = buildStepperData(run, _stepperPlayerIdx);
+  _stepperIdx   = 0;
+  _stepperOpen  = true;
+  document.getElementById('deckStepperOverlay').style.display = 'flex';
+  renderStepperPlayerTabs();
+  renderStepperStep(0);
+}
+
+function closeDeckStepper() {
+  _stepperOpen = false;
+  document.getElementById('deckStepperOverlay').style.display = 'none';
+}
+
+function navigateStepper(delta) {
+  if (!_stepperOpen) return;
+  const next = _stepperIdx + delta;
+  if (next < 0 || next >= _stepperData.length) return;
+  _stepperIdx = next;
+  renderStepperStep(_stepperIdx);
+}
+
+function setStepperPlayer(newIdx) {
+  const run = _currentDetailRun;
+  if (!run || !_stepperOpen) return;
+  const players = run.players || [];
+  if (newIdx < 0 || newIdx >= players.length) return;
+  if (newIdx === _stepperPlayerIdx) return;
+  _stepperPlayerIdx = newIdx;
+  // Rebuild data for new player but preserve current step index
+  const keepIdx = _stepperIdx;
+  _stepperData = buildStepperData(run, _stepperPlayerIdx);
+  _stepperIdx = Math.min(keepIdx, _stepperData.length - 1);
+  renderStepperPlayerTabs();
+  renderStepperStep(_stepperIdx);
+}
+
+function renderStepperPlayerTabs() {
+  const wrap = document.getElementById('stepperPlayerTabs');
+  if (!wrap) return;
+  const run = _currentDetailRun;
+  const players = run?.players || [];
+  if (players.length < 2) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.style.display = '';
+  wrap.innerHTML = players.map((p, i) => {
+    const label = escHtml(parseCharacter(p?.character || ''));
+    const active = i === _stepperPlayerIdx ? ' active' : '';
+    return `<button class="stepper-player-tab${active}" data-player-idx="${i}">${label}</button>`;
+  }).join('');
+}
+
+// ── Render one stepper step ───────────────────────────────────────────────────
+
+function stepperCardHtml(card, extraClass = '', labelHtml = '') {
+  const id       = card?.id || card;
+  const upgraded = (card?.current_upgrade_level || 0) >= 1;
+  const name     = typeof id === 'string' ? idToDisplayName(id) : String(card);
+  const data     = typeof id === 'string' ? lookupCardData(id) : null;
+  const enchId   = card?.enchantment?.id;
+  const enchData = enchId ? lookupEnchantmentData(enchId) : null;
+  const enchName = enchData?.name || (enchId ? idToDisplayName(enchId) : null);
+
+  let inner;
+  if (data?.imageFile) {
+    const imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
+    inner = `<img src="appdata://images/card_images/${escHtml(imgFile)}" alt="${escHtml(data.name || name)}" loading="lazy" />`;
+  } else {
+    inner = `<div class="card-img-placeholder">${escHtml(name)}</div>`;
+  }
+
+  const enchIcon = enchName && enchData?.imageFile
+    ? `<button class="card-enchant-icon" data-enchant-id="${escHtml(enchId)}" title="${escHtml(enchName)}"><img src="appdata://images/enchantment_images/${escHtml(enchData.imageFile)}" alt="${escHtml(enchName)}" /></button>`
+    : '';
+
+  return `<div class="stepper-card-wrap ${escHtml(extraClass)}" title="${escHtml(name)}">${inner}${enchIcon}${labelHtml}</div>`;
+}
+
+function renderStepperStep(idx) {
+  if (!_stepperData.length) return;
+  const step = _stepperData[idx];
+  const total = _stepperData.length;
+
+  document.getElementById('stepperStepInfo').textContent = `Step ${idx + 1} / ${total}`;
+
+  const prevBtn = document.getElementById('stepperPrevBtn');
+  const nextBtn = document.getElementById('stepperNextBtn');
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === total - 1;
+
+  // ── Node label ──────────────────────────────────────────────────────────
+  const catLabels = {
+    monster: 'Monster Fight', elite: 'Elite Fight', boss: 'Boss Fight',
+    event: 'Event', ancient: 'Ancient', shop: 'Shop', rest_site: 'Rest Site',
+    treasure: 'Treasure', unknown_fight: 'Unknown Fight', unknown_shop: 'Unknown Shop',
+    unknown_treasure: 'Unknown Treasure',
+  };
+  const catLabel = catLabels[step.category] || step.category;
+  const cfg = NODE_CFG[step.category] || NODE_CFG.event;
+
+  let nodeName = catLabel;
+  if (step.modelId) {
+    const formatted = formatModelDisplay(step.modelId);
+    if (formatted && formatted !== '—') nodeName = formatted;
+  }
+
+  // Act label
+  const actLabel = `Act ${step.actIdx + 1}`;
+
+  // ── HP row ──────────────────────────────────────────────────────────────
+  let hpHtml = '';
+  let deltaHtml = '';
+  if (step.hpVal !== null) {
+    const pct = step.maxHpVal ? Math.round((step.hpVal / step.maxHpVal) * 100) : null;
+    const hpColor = pct !== null
+      ? (pct > 60 ? '#4caf50' : pct > 30 ? '#ff9800' : '#f44336')
+      : '#aaa';
+    const hpLabel = step.isFight ? 'HP after fight' : 'HP';
+    const goldHtml = step.currentGold !== null
+      ? `<span class="stepper-gold-val">🪙 ${step.currentGold}g</span>`
+      : '';
+    hpHtml = `<span class="stepper-hp-val" style="color:${hpColor}">❤ ${step.hpVal}/${step.maxHpVal}</span>
+              <span style="color:var(--text-muted);font-size:0.8em;">${escHtml(hpLabel)}</span>
+              ${goldHtml}`;
+
+    // Deltas vs previous node — only show if there's at least one change
+    if (idx > 0) {
+      const prev = _stepperData[idx - 1];
+      const deltaHp   = (prev.hpVal        != null && step.hpVal        != null) ? step.hpVal        - prev.hpVal        : 0;
+      const deltaMax  = (prev.maxHpVal     != null && step.maxHpVal     != null) ? step.maxHpVal     - prev.maxHpVal     : 0;
+      const deltaGold = (prev.currentGold  != null && step.currentGold  != null) ? step.currentGold  - prev.currentGold  : 0;
+
+      const chips = [];
+      const fmt = (v) => (v > 0 ? `+${v}` : `${v}`);
+      const cls = (v) => v > 0 ? 'stepper-delta-pos' : (v < 0 ? 'stepper-delta-neg' : '');
+      if (deltaHp   !== 0) chips.push(`<span class="stepper-delta ${cls(deltaHp)}" title="HP change">❤ ${fmt(deltaHp)}</span>`);
+      if (deltaMax  !== 0) chips.push(`<span class="stepper-delta ${cls(deltaMax)}" title="Max HP change">✚ ${fmt(deltaMax)}</span>`);
+      if (deltaGold !== 0) chips.push(`<span class="stepper-delta ${cls(deltaGold)}" title="Gold change">🪙 ${fmt(deltaGold)}</span>`);
+      if (chips.length > 0) {
+        deltaHtml = `<span class="stepper-deltas">${chips.join('')}</span>`;
+      }
+    }
+  }
+
+  // ── Potions row ─────────────────────────────────────────────────────────
+  let potionsHtml = '';
+  if (step.potions.length > 0) {
+    potionsHtml = step.potions.map(pid => {
+      const name = idToDisplayName(pid);
+      const data = lookupPotionData(pid);
+      const inner = data?.imageFile
+        ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
+        : escHtml(name);
+      return `<span class="stepper-potion-chip" data-potion-id="${escHtml(pid)}" title="${escHtml(name)}" style="cursor:pointer;">${inner}</span>`;
+    }).join('');
+  }
+
+  // ── Shop section (replaces Card Reward for shop nodes) ──────────────────
+  const isShop = ['shop', 'unknown_shop'].includes(step.category);
+  let shopHtml = '';
+  if (isShop) {
+    // Build the shop's full card inventory by merging:
+    //   1. card_choices (remaining unsold cards — kept in their original position)
+    //   2. cards_gained at this node (colored cards bought — removed from card_choices)
+    //   3. bought_colorless (colorless cards bought — not in card_choices)
+    //
+    // For the buggy shop cases where bought cards are missing from card_choices:
+    // - Bought colored cards (from cards_gained) go at the FRONT
+    // - Bought colorless cards (from bought_colorless) go at the BACK
+    // - card_choices entries stay in the middle in their original order
+    const cardChoiceIds = new Set(step.cardChoices.map(ch => ch.card?.id).filter(Boolean));
+    const colorlessSet = new Set(step.boughtColorless || []);
+
+    const frontBought = []; // colored bought (missing from card_choices) — prepended
+    const middle = [];      // card_choices, in original order
+    const backBought = [];  // colorless bought — appended
+    const seenIds = new Set();
+
+    // 1. Middle: existing card_choices (preserve order)
+    for (const ch of step.cardChoices) {
+      const id = ch.card?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      middle.push({ card: ch.card, bought: !!ch.was_picked });
+    }
+
+    // 2. Front: colored bought cards missing from card_choices
+    for (const change of step.changes) {
+      if (change.type !== 'gained') continue;
+      const id = change.card?.id;
+      if (!id || seenIds.has(id)) continue;
+      if (cardChoiceIds.has(id)) continue;  // already in middle
+      if (colorlessSet.has(id)) continue;   // colorless → goes to back
+      seenIds.add(id);
+      frontBought.push({ card: change.card, bought: true });
+    }
+
+    // 3. Back: colorless bought cards
+    for (const id of step.boughtColorless) {
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      backBought.push({ card: { id }, bought: true });
+    }
+
+    const shopCards = [...frontBought, ...middle, ...backBought];
+
+    const shopCardItems = shopCards.map(item => {
+      const cls = item.bought ? 'chosen' : '';
+      return `<div class="stepper-choice-wrap">
+        ${stepperCardHtml(item.card, `stepper-choice-card ${cls}`)}
+        ${item.bought ? '<div class="stepper-choice-lbl chosen-lbl">Bought</div>' : ''}
+      </div>`;
+    }).join('');
+
+    const cardsRow = shopCardItems
+      ? `<div class="stepper-shop-row">
+          <div class="stepper-shop-sub">Cards for Sale</div>
+          <div class="stepper-choices">${shopCardItems}</div>
+        </div>`
+      : '';
+
+    // Relics for sale
+    const relicItems = step.relicChoices.map(rc => {
+      const id   = rc.choice;
+      const name = idToDisplayName(id);
+      const data = lookupRelicData(id);
+      const bought = rc.was_picked;
+      const imgHtml = data?.imageFile
+        ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        : `<div class="relic-icon-placeholder" style="width:36px;height:36px;font-size:0.6em;">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
+      return `<div class="stepper-shop-relic${bought ? ' bought' : ''}" data-relic-id="${escHtml(id)}" title="${escHtml(name)}">
+        ${imgHtml}
+        ${bought ? '<div class="stepper-shop-badge">✓</div>' : ''}
+      </div>`;
+    }).join('');
+
+    const relicsRow = step.relicChoices.length > 0
+      ? `<div class="stepper-shop-row">
+          <div class="stepper-shop-sub">Relics for Sale</div>
+          <div class="stepper-shop-grid">${relicItems}</div>
+        </div>`
+      : '';
+
+    // Potions for sale
+    const potionItems = step.potionChoices.map(pc => {
+      const id   = pc.choice;
+      const name = idToDisplayName(id);
+      const data = lookupPotionData(id);
+      const bought = pc.was_picked;
+      const inner = data?.imageFile
+        ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        : escHtml(name);
+      return `<div class="stepper-shop-potion${bought ? ' bought' : ''}" data-potion-id="${escHtml(id)}" title="${escHtml(name)}">
+        ${inner}
+        ${bought ? '<div class="stepper-shop-badge">✓</div>' : ''}
+      </div>`;
+    }).join('');
+
+    const potionsRow = step.potionChoices.length > 0
+      ? `<div class="stepper-shop-row">
+          <div class="stepper-shop-sub">Potions for Sale</div>
+          <div class="stepper-shop-grid">${potionItems}</div>
+        </div>`
+      : '';
+
+    if (cardsRow || relicsRow || potionsRow) {
+      shopHtml = `<div class="stepper-section">
+        <div class="stepper-sec-title">Shop Inventory</div>
+        ${cardsRow}${relicsRow}${potionsRow}
+      </div>`;
+    }
+  }
+
+  // ── Card reward section (non-shop only) ──────────────────────────────────
+  const cardChoicesIds = new Set(step.cardChoices.map(ch => ch.card?.id).filter(Boolean));
+  const removedIds = new Set(
+    step.changes.filter(c => c.type === 'removed').map(c => c.card?.id).filter(Boolean)
+  );
+
+  // Thieving Hopper: stolen card is in cards_removed + cards_gained but not
+  // in card_choices. Each becomes its own 1-card "Picked" reward batch.
+  const stolenReturned = [];
+  for (const c of step.changes) {
+    if (c.type !== 'gained') continue;
+    const id = c.card?.id;
+    if (!id || !removedIds.has(id) || cardChoicesIds.has(id)) continue;
+    stolenReturned.push({ card: c.card, was_picked: true });
+  }
+
+  // Event bonus cards: card given by an event (e.g., Lantern Key, Brain Leech)
+  // appears in cards_gained only, not in card_choices (because the event's
+  // single-card "reward" isn't stored as a choice). Each becomes its own
+  // 1-card reward batch at the top.
+  // Skip if card_choices is empty AND there are many gained cards (Reflections
+  // event restores the full starting deck — these aren't rewards).
+  const bonusRewards = [];
+  const gainedCount = step.changes.filter(c => c.type === 'gained').length;
+  const allowBonus = step.cardChoices.length > 0 || gainedCount <= 2;
+  if (allowBonus) {
+    for (const c of step.changes) {
+      if (c.type !== 'gained') continue;
+      const id = c.card?.id;
+      if (!id) continue;
+      if (cardChoicesIds.has(id)) continue;
+      if (removedIds.has(id)) continue; // already handled by stolenReturned
+      bonusRewards.push({ card: c.card, was_picked: true });
+    }
+  }
+
+  // Lead Paperweight / Neow: card_choices lists ONLY the unpicked options.
+  // The actually-picked card is only in cards_gained. Only apply at Neow
+  // (nodes with ancient_choice) where the reward may be a non-standard size.
+  const isNeow = step.ancientChoices && step.ancientChoices.length > 0;
+  let incompleteNeowBatch = null;
+  if (isNeow && step.cardChoices.length > 0 && !step.anyPicked && bonusRewards.length > 0) {
+    incompleteNeowBatch = [...bonusRewards, ...step.cardChoices];
+  }
+
+  let choicesHtml = '';
+  const hasChoicesContent = incompleteNeowBatch
+    || stolenReturned.length > 0
+    || bonusRewards.length > 0
+    || step.cardChoices.length > 0;
+  if (!isShop && hasChoicesContent) {
+    let groups;
+    if (incompleteNeowBatch) {
+      // Neow / Lead Paperweight: dedicated single batch combining synthesized
+      // picked card(s) with remaining unpicked options. Bypasses standard
+      // N%3 grouping (which would wrongly split a 2-card reward).
+      groups = [incompleteNeowBatch];
+      if (stolenReturned.length > 0) {
+        groups = [...stolenReturned.map(c => [c]), ...groups];
+      }
+    } else {
+      // Build groups explicitly: stolen-returned and bonus cards each get
+      // their own 1-card batch, then card_choices go through standard
+      // N%3 grouping (where card_choices alone should always be multiples of 3).
+      groups = [];
+      for (const c of stolenReturned) groups.push([c]);
+      for (const c of bonusRewards) groups.push([c]);
+      if (step.cardChoices.length > 0) {
+        groups.push(...groupCardChoices(step.cardChoices));
+      }
+    }
+
+    const groupRows = groups.map((group, gi) => {
+      const batchPicked = group.some(c => c.was_picked);
+      const cards = group.map(ch => {
+        const cls = ch.was_picked ? 'chosen' : '';
+        return `<div class="stepper-choice-wrap">
+          ${stepperCardHtml(ch.card, `stepper-choice-card ${cls}`)}
+          ${ch.was_picked ? '<div class="stepper-choice-lbl chosen-lbl">Picked</div>' : ''}
+        </div>`;
+      }).join('');
+
+      const skipClass = !batchPicked ? 'chosen' : '';
+      const skipCard = `<div class="stepper-choice-wrap">
+        <div class="stepper-skip-card ${skipClass}">SKIP</div>
+        ${!batchPicked ? '<div class="stepper-choice-lbl chosen-lbl">Chosen</div>' : ''}
+      </div>`;
+
+      const label = groups.length > 1 ? `Card Reward ${gi + 1}` : 'Card Reward';
+      return `<div class="stepper-reward-group">
+        <div class="stepper-reward-group-label">${escHtml(label)}</div>
+        <div class="stepper-choices">${cards}${skipCard}</div>
+      </div>`;
+    }).join('');
+
+    choicesHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Card Reward${groups.length > 1 ? 's' : ''}</div>
+      ${groupRows}
+    </div>`;
+  }
+
+  // ── Cards Added (all cards gained, including shop purchases) ────────────
+  let gainedHtml = '';
+  const gained = step.changes.filter(c => c.type === 'gained');
+  if (gained.length > 0) {
+    const cards = gained.map(ch =>
+      `<div class="stepper-choice-wrap">${stepperCardHtml(ch.card, 'stepper-choice-card')}</div>`
+    ).join('');
+    gainedHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Cards Added</div>
+      <div class="stepper-choices">${cards}</div>
+    </div>`;
+  }
+
+  // ── Card removal section ────────────────────────────────────────────────
+  // Filter out cards that were removed AND returned at the same node
+  // (e.g., Thieving Hopper steals a card then returns it on kill).
+  let removalsHtml = '';
+  const gainedIdsAtStep = new Set(
+    step.changes.filter(c => c.type === 'gained').map(c => c.card?.id).filter(Boolean)
+  );
+  const removals = step.changes.filter(
+    c => c.type === 'removed' && !gainedIdsAtStep.has(c.card?.id)
+  );
+  if (removals.length > 0) {
+    const cards = removals.map(ch =>
+      `<div class="stepper-choice-wrap">${stepperCardHtml(ch.card, 'stepper-choice-card removal')}</div>`
+    ).join('');
+    removalsHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Card Removal</div>
+      <div class="stepper-choices">${cards}</div>
+    </div>`;
+  }
+
+  // ── Card upgrade section ─────────────────────────────────────────────────
+  let upgradesHtml = '';
+  const upgrades = step.changes.filter(c => c.type === 'upgraded');
+  if (upgrades.length > 0) {
+    const cards = upgrades.map(ch =>
+      `<div class="stepper-choice-wrap">${stepperCardHtml({ id: ch.cardId, current_upgrade_level: 1 }, 'stepper-choice-card')}</div>`
+    ).join('');
+    upgradesHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Upgraded</div>
+      <div class="stepper-choices">${cards}</div>
+    </div>`;
+  }
+
+  // ── Card transform section ───────────────────────────────────────────────
+  let transformsHtml = '';
+  const transforms = step.changes.filter(c => c.type === 'transformed');
+  if (transforms.length > 0) {
+    const items = transforms.map(ch =>
+      `<div class="stepper-transform-pair">
+        ${stepperCardHtml(ch.original, 'stepper-choice-card')}
+        <span class="stepper-transform-arrow">⇒</span>
+        ${stepperCardHtml(ch.final, 'stepper-choice-card')}
+      </div>`
+    ).join('');
+    transformsHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Transformed</div>
+      <div class="stepper-choices">${items}</div>
+    </div>`;
+  }
+
+  // ── Card enchant section ────────────────────────────────────────────────
+  // ch.card already has `enchantment: {id, amount}` nested. The outer
+  // ch.enchantment is just a string id (redundant).
+  let enchantsHtml = '';
+  const enchants = step.changes.filter(c => c.type === 'enchanted');
+  if (enchants.length > 0) {
+    const items = enchants.map(ch => {
+      const enchId = ch.card?.enchantment?.id;
+      const enchName = enchId
+        ? (lookupEnchantmentData(enchId)?.name || idToDisplayName(enchId))
+        : '';
+      return `<div class="stepper-choice-wrap">
+        ${stepperCardHtml(ch.card, 'stepper-choice-card')}
+        ${enchName ? `<div class="stepper-choice-lbl">${escHtml(enchName)}</div>` : ''}
+      </div>`;
+    }).join('');
+    enchantsHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Enchanted</div>
+      <div class="stepper-choices">${items}</div>
+    </div>`;
+  }
+
+  // ── Relics row ───────────────────────────────────────────────────────────
+  let relicsHtml = '';
+  if (step.relicsAtNode.length > 0) {
+    // Determine which relics are "new" at this floor
+    const newFloors = new Set();
+    if (idx > 0) {
+      const prevRelics = _stepperData[idx - 1].relicsAtNode;
+      const prevIds = new Set(prevRelics.map(r => r.id || r));
+      step.relicsAtNode.forEach(r => {
+        if (!prevIds.has(r.id || r)) newFloors.add(r.id || r);
+      });
+    } else {
+      // First node: all relics gained at floor 1 are "new"
+      step.relicsAtNode.forEach(r => {
+        if ((r.floor_added_to_deck ?? 1) === 1) newFloors.add(r.id || r);
+      });
+    }
+
+    const chips = step.relicsAtNode.map(r => {
+      const id   = r.id || r;
+      const name = idToDisplayName(id);
+      const data = lookupRelicData(id);
+      const isNew = newFloors.has(id);
+      const imgHtml = data?.imageFile
+        ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        : `<div class="relic-icon-placeholder" style="width:24px;height:24px;font-size:0.6em;">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
+      return `<span class="stepper-relic-chip${isNew ? ' new-relic' : ''}" data-relic-id="${escHtml(id)}" title="${escHtml(name)}" style="cursor:pointer;">${imgHtml}</span>`;
+    }).join('');
+
+    relicsHtml = `<div class="stepper-section">
+      <div class="stepper-sec-title">Relics (${step.relicsAtNode.length})</div>
+      <div class="stepper-relics-row">${chips}</div>
+    </div>`;
+  }
+
+  // ── Deck section ──────────────────────────────────────────────────────────
+  const deckCards = step.deckBefore.map(card => stepperCardHtml(card)).join('');
+  const deckHtml = `<div class="stepper-section">
+    <div class="stepper-sec-title">Deck Before This Node (${step.deckBefore.length} cards)</div>
+    <div class="stepper-deck-grid">${deckCards || '<span style="color:var(--text-muted)">Empty</span>'}</div>
+  </div>`;
+
+  // ── Node header ────────────────────────────────────────────────────────────
+  const iconHtml = `<img src="appdata://images/map_icons/${escHtml(cfg.img)}" alt="${escHtml(catLabel)}" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;" />`;
+
+  // Make node name clickable if it has event data in the events json
+  const evData = lookupEventByModelId(step.modelId);
+  const nameClickable = !!evData;
+  const nameAttrs = nameClickable
+    ? ` data-stepper-event="${escHtml(evData.name)}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;"`
+    : '';
+
+  const nodeHeaderHtml = `<div class="stepper-node-info">
+    <div class="stepper-node-header">
+      <span class="stepper-node-name"${nameAttrs}>${iconHtml}${escHtml(nodeName)}</span>
+      <span style="color:var(--text-muted);font-size:0.85em;">${escHtml(actLabel)} · Floor ${step.floor}</span>
+    </div>
+    <div class="stepper-hp-row">
+      ${hpHtml}
+      ${potionsHtml ? `<span style="margin-left:8px;">${potionsHtml}</span>` : ''}
+      ${deltaHtml}
+    </div>
+  </div>`;
+
+  document.getElementById('stepperBody').innerHTML =
+    nodeHeaderHtml + shopHtml + choicesHtml + gainedHtml + removalsHtml + upgradesHtml + transformsHtml + enchantsHtml + relicsHtml + deckHtml;
+}
+
+// ── Stepper event wiring (called from init) ───────────────────────────────────
+
+function initDeckStepper() {
+  document.getElementById('deckStepperBtn').addEventListener('click', () => openDeckStepper());
+  document.getElementById('stepperCloseBtn').addEventListener('click', () => closeDeckStepper());
+  document.getElementById('stepperPrevBtn').addEventListener('click', () => navigateStepper(-1));
+  document.getElementById('stepperNextBtn').addEventListener('click', () => navigateStepper(1));
+  document.getElementById('stepperPlayerTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.stepper-player-tab');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.playerIdx, 10);
+    if (!isNaN(idx)) setStepperPlayer(idx);
+  });
+
+  // Close on overlay background click
+  document.getElementById('deckStepperOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('deckStepperOverlay')) closeDeckStepper();
+  });
+
+  // Click delegation: enchant icon → enchantment popup, node name → event popup,
+  // relic chips → relic popup, potion chips → potion popup
+  document.getElementById('stepperBody').addEventListener('click', (e) => {
+    const enchBtn = e.target.closest('.card-enchant-icon');
+    if (enchBtn) {
+      e.stopPropagation();
+      const enchId = enchBtn.dataset.enchantId;
+      const data = enchId ? lookupEnchantmentData(enchId) : null;
+      if (data) openEnchantmentPopup(data);
+      return;
+    }
+    const eventEl = e.target.closest('[data-stepper-event]');
+    if (eventEl) { openEventPopup(eventEl.dataset.stepperEvent); return; }
+    const relicChip = e.target.closest('[data-relic-id]');
+    if (relicChip) { openRelicPopup(relicChip.dataset.relicId); return; }
+    const potionChip = e.target.closest('[data-potion-id]');
+    if (potionChip) { openPotionPopup(potionChip.dataset.potionId); return; }
+  });
+}
 
 init().catch(console.error);
