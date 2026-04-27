@@ -16,13 +16,15 @@ The folder is remembered; future launches go straight to the dashboard.
 
 ## Dashboard
 
-![Dashboard overview](docs/screenshots/01-dashboard.png)
+![Dashboard top — filters and stats summary](docs/screenshots/01a-dashboard-top.png)
 
-The home view, in three stacked sections:
+The home view has three stacked sections:
 
 - **Filters bar** — game mode (All / Solo / Co-op / **Shared**), character, ascension multi-select, win-only, abandoned handling, min duration, and tag-based **Has Card / Relic** + **Exclude Card / Relic** searches. All filters apply live to the stats and the run list.
 - **Stats summary** — total runs, win rate, wins/losses, avg duration, character breakdown, top death causes, ascension distribution.
 - **Run list** — every `.run` file as a row (character, ascension, outcome, date, duration). Click a row to open the detail view. Star a row to favorite it. The list auto-refreshes when files change in the folder.
+
+![Dashboard run list](docs/screenshots/01b-dashboard-runs.png)
 
 The **Shared** mode tab lists runs you've imported via 📂 Open Run (from disk or Pastebin); they're stored separately from your own runs at `%APPDATA%\sts2-dashboard\Shared Runs\` and don't mix into your stats.
 
