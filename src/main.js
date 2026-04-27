@@ -10,17 +10,35 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow = null;
 let watcher = null;
-const appdataBase   = path.join(app.getPath('appData'), 'STS2S', 'Assets');
+const appdataBase   = path.join(app.getPath('userData'), 'Assets');
 const settingsDir   = path.join(appdataBase, 'settings');
 const configPath    = path.join(settingsDir, 'config.json');
 const favoritesPath = path.join(settingsDir, 'favorites.json');
 
 // Ensure required asset directories exist on first run
-const dataDir    = path.join(appdataBase, 'data');
-const imagesDir  = path.join(appdataBase, 'images');
-try { fs.mkdirSync(settingsDir, { recursive: true }); } catch (_) {}
-try { fs.mkdirSync(dataDir,     { recursive: true }); } catch (_) {}
-try { fs.mkdirSync(imagesDir,   { recursive: true }); } catch (_) {}
+const dataDir       = path.join(appdataBase, 'data');
+const imagesDir     = path.join(appdataBase, 'images');
+const sharedRunsDir = path.join(app.getPath('userData'), 'Shared Runs');
+try { fs.mkdirSync(settingsDir,   { recursive: true }); } catch (_) {}
+try { fs.mkdirSync(dataDir,       { recursive: true }); } catch (_) {}
+try { fs.mkdirSync(imagesDir,     { recursive: true }); } catch (_) {}
+try { fs.mkdirSync(sharedRunsDir, { recursive: true }); } catch (_) {}
+
+function saveSharedRun(name, contentString) {
+  try {
+    const safe = String(name).replace(/[\\/:*?"<>|]/g, '_').replace(/^\.+/, '');
+    if (!safe) return null;
+    const filename = safe.endsWith('.run') ? safe : safe + '.run';
+    const fullPath = path.join(sharedRunsDir, filename);
+    if (!fs.existsSync(fullPath)) {
+      fs.writeFileSync(fullPath, contentString, 'utf8');
+    }
+    return fullPath;
+  } catch (e) {
+    console.warn('Failed to save shared run:', e);
+    return null;
+  }
+}
 
 // ── Config helpers ──────────────────────────────────────────────────────────
 
@@ -183,12 +201,36 @@ ipcMain.handle('open-run-file', async () => {
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   try {
-    const raw = fs.readFileSync(result.filePaths[0], 'utf8');
+    const sourcePath = result.filePaths[0];
+    const raw    = fs.readFileSync(sourcePath, 'utf8');
     const parsed = JSON.parse(raw);
-    parsed._filePath = result.filePaths[0];
+    const sharedPath = saveSharedRun(path.basename(sourcePath), raw);
+    parsed._filePath = sharedPath || sourcePath;
     return parsed;
   } catch (e) {
     return { error: e.message };
+  }
+});
+
+ipcMain.handle('read-shared-runs', () => {
+  try {
+    if (!fs.existsSync(sharedRunsDir)) return { error: null, files: [] };
+    const entries = fs.readdirSync(sharedRunsDir).filter(f => f.endsWith('.run'));
+    const runs = [];
+    for (const file of entries) {
+      const filePath = path.join(sharedRunsDir, file);
+      try {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        parsed._filePath = filePath;
+        runs.push(parsed);
+      } catch (e) {
+        console.warn(`Failed to parse shared run ${file}:`, e.message);
+      }
+    }
+    return { error: null, files: runs };
+  } catch (e) {
+    return { error: e.message, files: [] };
   }
 });
 
@@ -266,9 +308,10 @@ ipcMain.handle('export-to-pastebin', async (_event, { filePath, apiKey }) => {
 ipcMain.handle('fetch-pastebin', async (_event, url) => {
   try {
     let rawUrl = (url || '').trim();
-    // Convert https://pastebin.com/XXXX → https://pastebin.com/raw/XXXX
-    const m = rawUrl.match(/pastebin\.com\/(?!raw\/)([A-Za-z0-9]+)\/?$/);
-    if (m) rawUrl = `https://pastebin.com/raw/${m[1]}`;
+    // Extract pastebin id, accepting either https://pastebin.com/XXXX or the /raw/ variant
+    const idMatch = rawUrl.match(/pastebin\.com\/(?:raw\/)?([A-Za-z0-9]+)/);
+    const pasteId = idMatch ? idMatch[1] : null;
+    if (pasteId) rawUrl = `https://pastebin.com/raw/${pasteId}`;
     const resp = await fetch(rawUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       signal: AbortSignal.timeout(12000),
@@ -280,6 +323,10 @@ ipcMain.handle('fetch-pastebin', async (_event, url) => {
     // Basic validation: must look like a run file
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.players)) {
       return { error: 'Not a valid .run file — missing expected fields.' };
+    }
+    if (pasteId) {
+      const sharedPath = saveSharedRun(pasteId, text);
+      if (sharedPath) parsed._filePath = sharedPath;
     }
     return { data: parsed };
   } catch (e) {

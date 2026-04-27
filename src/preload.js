@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Run file reading
   readRunFiles: (folderPath) => ipcRenderer.invoke('read-run-files', folderPath),
+  readSharedRuns: () => ipcRenderer.invoke('read-shared-runs'),
 
   // Navigation
   navigateToDashboard: () => ipcRenderer.invoke('navigate-to-dashboard'),

@@ -99,24 +99,54 @@ function idToDisplayName(id) {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function mapLookup(map, name) {
+  const key = normalizeName(name);
+  return map.get(key) || map.get('the ' + key) || null;
+}
+
 function lookupRelicData(id) {
-  const name = idToDisplayName(id);
-  return relicsMap.get(normalizeName(name)) || null;
+  return mapLookup(relicsMap, idToDisplayName(id));
+}
+
+// Canonical normalized name for an id, matched against a name→data map.
+// Falls back to a 'the ' prefix because relics like "The Chosen Cheese" are stored
+// as RELIC.CHOSEN_CHEESE in run data but as "The Chosen Cheese" in the JSON.
+function idToMapKey(id, map) {
+  const key = normalizeName(idToDisplayName(id));
+  if (map.has(key)) return key;
+  if (map.has('the ' + key)) return 'the ' + key;
+  return key;
 }
 
 function lookupCardData(id) {
-  const name = idToDisplayName(id);
-  return cardsMap.get(normalizeName(name)) || null;
+  return mapLookup(cardsMap, idToDisplayName(id));
+}
+
+/**
+ * For Mad Science (which has 9 variants stored as individual GIF frames),
+ * return the correct per-variant image file based on the card's TinkerTimeRider prop.
+ * Returns { imageFile, imageFileUpgraded } overrides, or null if not applicable.
+ */
+function getMadScienceImageOverride(card) {
+  if (!card || !card.props) return null;
+  const id = card.id || '';
+  if (id !== 'CARD.MAD_SCIENCE') return null;
+  const ints = card.props.ints || [];
+  const rider = ints.find(p => p.name === 'TinkerTimeRider');
+  if (!rider) return null;
+  const idx = rider.value + 1; // TinkerTimeRider is 0-indexed (0–8), frame files are 1-indexed
+  return {
+    imageFile:         `StS2_Colorless-MadScience_${idx}.gif`,
+    imageFileUpgraded: `StS2_Colorless-MadSciencePlus_${idx}.gif`,
+  };
 }
 
 function lookupEnchantmentData(id) {
-  const name = idToDisplayName(id);
-  return enchantmentsMap.get(normalizeName(name)) || null;
+  return mapLookup(enchantmentsMap, idToDisplayName(id));
 }
 
 function lookupPotionData(id) {
-  const name = idToDisplayName(id);
-  return potionsMap.get(normalizeName(name)) || null;
+  return mapLookup(potionsMap, idToDisplayName(id));
 }
 
 // ── Ascension filter ─────────────────────────────────────────────────────────
@@ -330,9 +360,9 @@ function applyFilters(allRuns, filters) {
       for (const token of filters.searchTokens) {
         let found = false;
         if (token.type === 'relic') {
-          found = allRelics.some(r => normalizeName(idToDisplayName(r.id)) === token.normalizedName);
+          found = allRelics.some(r => idToMapKey(r.id, relicsMap) === token.normalizedName);
         } else {
-          found = allDeck.some(c => normalizeName(idToDisplayName(c.id)) === token.normalizedName);
+          found = allDeck.some(c => idToMapKey(c.id, cardsMap) === token.normalizedName);
         }
         if (!found) return false;
       }
@@ -344,9 +374,9 @@ function applyFilters(allRuns, filters) {
       for (const token of filters.excludeTokens) {
         let found = false;
         if (token.type === 'relic') {
-          found = allRelics.some(r => normalizeName(idToDisplayName(r.id)) === token.normalizedName);
+          found = allRelics.some(r => idToMapKey(r.id, relicsMap) === token.normalizedName);
         } else {
-          found = allDeck.some(c => normalizeName(idToDisplayName(c.id)) === token.normalizedName);
+          found = allDeck.some(c => idToMapKey(c.id, cardsMap) === token.normalizedName);
         }
         if (found) return false;
       }
@@ -575,7 +605,7 @@ function lookupEventByModelId(modelId) {
   if (!modelId || !modelId.startsWith('EVENT.')) return null;
   const slug = modelId.slice(6);
   const name = slug.split('_').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');
-  return eventsMap.get(normalizeName(name)) || null;
+  return mapLookup(eventsMap, name);
 }
 
 function formatModelDisplay(modelId) {
@@ -842,8 +872,10 @@ function showRunDetail(run) {
   _currentDetailRun = run;
   _detailPlayerIdx  = 0;
   document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('insightsView').style.display = 'none';
   document.getElementById('runDetailView').style.display = '';
   document.getElementById('runDetailView').scrollTop = 0;
+  navPush({ view: 'runDetail', run });
 
   _deckSorted = false;  // reset sort state for each new run
   const sortBtn = document.getElementById('deckSortBtn');
@@ -895,6 +927,7 @@ function showRunDetail(run) {
 function hideRunDetail() {
   document.getElementById('runDetailView').style.display = 'none';
   document.getElementById('mainContent').style.display = '';
+  navPush({ view: 'home' });
 }
 
 function renderDetailMeta(run) {
@@ -1016,8 +1049,10 @@ function renderDetailDeck(deck) {
     const enchName = enchData?.name || (enchId ? idToDisplayName(enchId) : null);
 
     let inner;
+    const msOverride = getMadScienceImageOverride(card);
     if (data?.imageFile) {
-      const imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
+      let imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
+      if (msOverride) imgFile = upgraded ? msOverride.imageFileUpgraded : msOverride.imageFile;
       const displayName = data.name || name;
       inner = `<img src="appdata://images/card_images/${escHtml(imgFile)}" alt="${escHtml(displayName)}" loading="lazy" />`;
     } else {
@@ -1067,7 +1102,7 @@ function closeRelicPopup() {
 }
 
 function openRelicPopupByName(name) {
-  const data = relicsMap.get(normalizeName(name));
+  const data = mapLookup(relicsMap, name);
   const imgWrap = document.getElementById('popupRelicImgWrap');
   imgWrap.innerHTML = data?.imageFile
     ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
@@ -1082,7 +1117,7 @@ function openRelicPopupByName(name) {
 }
 
 function openCardPopup(cardName) {
-  const data = cardsMap.get(normalizeName(cardName));
+  const data = mapLookup(cardsMap, cardName);
   document.getElementById('cardPopupName').textContent = data?.name || cardName;
   const metaParts = [];
   if (data?.type)   metaParts.push(data.type);
@@ -1108,15 +1143,18 @@ function closeCardPopup() {
 }
 
 function openEventPopup(name) {
-  const data = eventsMap.get(normalizeName(name));
+  const data = mapLookup(eventsMap, name);
   const imgWrap = document.getElementById('eventPopupImgWrap');
   imgWrap.innerHTML = data?.imageFile
     ? `<img src="appdata://images/event_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
     : `<div class="event-img-placeholder">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
   document.getElementById('eventPopupName').textContent = data?.name || name;
-  document.getElementById('eventPopupFlavor').textContent = data?.flavor || '';
-  document.getElementById('eventPopupFlavor').style.display = data?.flavor ? '' : 'none';
-  document.getElementById('eventPopupDesc').textContent = data?.description || '—';
+  const desc   = data?.description || '';
+  const flavor = data?.flavor || '';
+  // When no description, promote flavor to primary text; when both exist show description primary
+  document.getElementById('eventPopupDesc').textContent = desc || flavor || '—';
+  document.getElementById('eventPopupFlavor').textContent = desc ? flavor : '';
+  document.getElementById('eventPopupFlavor').style.display = (desc && flavor) ? '' : 'none';
   document.getElementById('eventPopup').style.display = 'flex';
 }
 
@@ -1178,6 +1216,68 @@ let lastFilteredRuns = [];
 let allSortedRuns    = [];
 let allFiles         = [];
 let favoritesSet     = new Set();
+
+// ── View navigation history (browser-style back/forward) ────────────────────
+// Each entry: { view: 'home'|'runDetail'|'insights'|'stepper', run?: object }
+const _navHistory = [{ view: 'home' }];
+let _navIdx = 0;
+let _navSuppressPush = false; // flag to suppress push during back/forward
+
+function getCurrentView() {
+  if (_stepperOpen) return 'stepper';
+  if (document.getElementById('insightsView').style.display !== 'none') return 'insights';
+  if (document.getElementById('runDetailView').style.display !== 'none') return 'runDetail';
+  return 'home';
+}
+
+function navPush(entry) {
+  if (_navSuppressPush) return;
+  // Wipe forward history beyond current position
+  _navHistory.splice(_navIdx + 1);
+  _navHistory.push(entry);
+  _navIdx = _navHistory.length - 1;
+}
+
+function navGoTo(entry) {
+  switch (entry.view) {
+    case 'home':
+      if (_stepperOpen) closeDeckStepper();
+      hideInsights();
+      hideRunDetail();
+      document.getElementById('mainContent').style.display = '';
+      renderAllRuns(lastFilteredRuns);
+      break;
+    case 'runDetail':
+      if (_stepperOpen) closeDeckStepper();
+      hideInsights();
+      if (entry.run) showRunDetail(entry.run);
+      break;
+    case 'insights':
+      if (_stepperOpen) closeDeckStepper();
+      showInsights();
+      break;
+    case 'stepper':
+      if (entry.run && _currentDetailRun !== entry.run) showRunDetail(entry.run);
+      openDeckStepper();
+      break;
+  }
+}
+
+function navBack() {
+  if (_navIdx <= 0) return;
+  _navIdx--;
+  _navSuppressPush = true;
+  navGoTo(_navHistory[_navIdx]);
+  _navSuppressPush = false;
+}
+
+function navForward() {
+  if (_navIdx >= _navHistory.length - 1) return;
+  _navIdx++;
+  _navSuppressPush = true;
+  navGoTo(_navHistory[_navIdx]);
+  _navSuppressPush = false;
+}
 
 function runKey(run) {
   return `${run.start_time || 0}_${run.run_time || 0}_${run.players?.[0]?.character || ''}`;
@@ -1399,6 +1499,7 @@ function showInsights() {
   document.getElementById('insightsView').style.display  = '';
   document.getElementById('insightsView').scrollTop      = 0;
   renderInsightsView(lastFilteredRuns);
+  navPush({ view: 'insights' });
 }
 
 function hideInsights() {
@@ -1442,7 +1543,7 @@ function computeInsights(runs) {
       if (STARTER_RELIC_NORMS.has(norm)) continue;
       if (seen.has(norm)) continue; seen.add(norm);
       if (!relicWrMap.has(norm)) {
-        const rd = relicsMap.get(norm);
+        const rd = mapLookup(relicsMap, norm);
         relicWrMap.set(norm, { name: rd?.name || idToDisplayName(r.id), imageFile: rd?.imageFile || '', w: 0, t: 0 });
       }
       const s = relicWrMap.get(norm); s.t++; if (run.win) s.w++;
@@ -1540,7 +1641,7 @@ function computeInsights(runs) {
         const key = [relics[i], relics[j]].sort().join('\x00');
         if (!relicPairMap.has(key)) {
           const [a, bk] = key.split('\x00');
-          const rdA = relicsMap.get(a), rdB = relicsMap.get(bk);
+          const rdA = mapLookup(relicsMap, a), rdB = mapLookup(relicsMap, bk);
           relicPairMap.set(key, { nameA: rdA?.name||a, nameB: rdB?.name||bk, imgA: rdA?.imageFile||'', imgB: rdB?.imageFile||'', w:0, t:0 });
         }
         const s = relicPairMap.get(key); s.t++; if (run.win) s.w++;
@@ -1623,7 +1724,7 @@ function computeInsights(runs) {
       const norm = normalizeName(displayName);
       if (seen.has(norm)) continue; seen.add(norm);
       if (!eventWrMap.has(norm)) {
-        const ev = eventsMap.get(norm);
+        const ev = mapLookup(eventsMap, norm);
         eventWrMap.set(norm, { name: ev?.name || displayName, imageFile: ev?.imageFile || '', w: 0, t: 0 });
       }
       const s = eventWrMap.get(norm); s.t++; if (run.win) s.w++;
@@ -1646,7 +1747,7 @@ function computeInsights(runs) {
       const norm = normalizeName(displayName);
       if (seen.has(norm)) continue; seen.add(norm);
       if (!ancientWrMap.has(norm)) {
-        const ev = eventsMap.get(norm);
+        const ev = mapLookup(eventsMap, norm);
         ancientWrMap.set(norm, { name: ev?.name || displayName, w: 0, t: 0 });
       }
       const s = ancientWrMap.get(norm); s.t++; if (run.win) s.w++;
@@ -2062,13 +2163,16 @@ function renderInsightsView(runs) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function loadAndRender() {
-  if (!currentFolder) return;
+  const isShared = currentFilters.mode === 'shared';
+  if (!currentFolder && !isShared) return;
 
   // Always return to the main list view (handles refresh from detail/insights page)
   hideRunDetail();
   hideInsights();
 
-  const { error, files } = await window.electronAPI.readRunFiles(currentFolder);
+  const { error, files } = isShared
+    ? await window.electronAPI.readSharedRuns()
+    : await window.electronAPI.readRunFiles(currentFolder);
 
   if (error) {
     document.getElementById('mainContent').style.display = 'none';
@@ -2168,7 +2272,11 @@ async function init() {
   });
 
   // Back button in detail view
-  document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('backBtn').addEventListener('click', async () => {
+    if (currentFilters.mode === 'shared') {
+      await loadAndRender();
+      return;
+    }
     hideRunDetail();
     renderAllRuns(lastFilteredRuns);
   });
@@ -2194,6 +2302,7 @@ async function init() {
   document.getElementById('backFromInsightsBtn').addEventListener('click', () => {
     hideInsights();
     document.getElementById('mainContent').style.display = 'block';
+    navPush({ view: 'home' });
   });
 
   // Relic click → popup (event delegation on the row container)
@@ -2355,12 +2464,29 @@ async function init() {
   });
 
   document.addEventListener('keydown', (e) => {
+    const isInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+
+    // Alt+Left/Right: browser-style back/forward navigation
+    if (e.altKey && e.key === 'ArrowLeft')  { navBack();    e.preventDefault(); return; }
+    if (e.altKey && e.key === 'ArrowRight') { navForward();  e.preventDefault(); return; }
+
     if (_stepperOpen) {
       if (e.key === 'ArrowLeft')  { navigateStepper(-1); e.preventDefault(); return; }
       if (e.key === 'ArrowRight') { navigateStepper(1);  e.preventDefault(); return; }
       if (e.key === 'Escape')     { closeDeckStepper(); return; }
       return;
     }
+
+    // Arrow key pagination on home screen
+    if (!isInput && getCurrentView() === 'home') {
+      if (e.key === 'ArrowLeft'  && currentRunPage > 0) {
+        currentRunPage--; renderAllRuns(lastFilteredRuns); e.preventDefault(); return;
+      }
+      if (e.key === 'ArrowRight' && currentRunPage < Math.ceil(allSortedRuns.length / PAGE_SIZE) - 1) {
+        currentRunPage++; renderAllRuns(lastFilteredRuns); e.preventDefault(); return;
+      }
+    }
+
     if (e.key === 'Escape') {
       closeRelicPopup(); closeCardPopup(); closeNodePopup(); closePotionPopup();
       legendPopup.style.display = 'none';
@@ -3170,11 +3296,13 @@ function openDeckStepper() {
   document.getElementById('deckStepperOverlay').style.display = 'flex';
   renderStepperPlayerTabs();
   renderStepperStep(0);
+  navPush({ view: 'stepper', run });
 }
 
 function closeDeckStepper() {
   _stepperOpen = false;
   document.getElementById('deckStepperOverlay').style.display = 'none';
+  navPush({ view: 'runDetail', run: _currentDetailRun });
 }
 
 function navigateStepper(delta) {
@@ -3230,8 +3358,10 @@ function stepperCardHtml(card, extraClass = '', labelHtml = '') {
   const enchName = enchData?.name || (enchId ? idToDisplayName(enchId) : null);
 
   let inner;
+  const msOverride = getMadScienceImageOverride(card);
   if (data?.imageFile) {
-    const imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
+    let imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
+    if (msOverride) imgFile = upgraded ? msOverride.imageFileUpgraded : msOverride.imageFile;
     inner = `<img src="appdata://images/card_images/${escHtml(imgFile)}" alt="${escHtml(data.name || name)}" loading="lazy" />`;
   } else {
     inner = `<div class="card-img-placeholder">${escHtml(name)}</div>`;
@@ -3462,6 +3592,7 @@ function renderStepperStep(idx) {
   // Skip if card_choices is empty AND there are many gained cards (Reflections
   // event restores the full starting deck — these aren't rewards).
   const bonusRewards = [];
+  const curseRewards = [];
   const gainedCount = step.changes.filter(c => c.type === 'gained').length;
   const allowBonus = step.cardChoices.length > 0 || gainedCount <= 2;
   if (allowBonus) {
@@ -3471,7 +3602,12 @@ function renderStepperStep(idx) {
       if (!id) continue;
       if (cardChoicesIds.has(id)) continue;
       if (removedIds.has(id)) continue; // already handled by stolenReturned
-      bonusRewards.push({ card: c.card, was_picked: true });
+      const cardData = lookupCardData(id);
+      if (cardData?.type === 'Curse' || cardData?.rarity === 'Curse') {
+        curseRewards.push({ card: c.card, was_picked: true, _isCurse: true });
+      } else {
+        bonusRewards.push({ card: c.card, was_picked: true });
+      }
     }
   }
 
@@ -3488,6 +3624,7 @@ function renderStepperStep(idx) {
   const hasChoicesContent = incompleteNeowBatch
     || stolenReturned.length > 0
     || bonusRewards.length > 0
+    || curseRewards.length > 0
     || step.cardChoices.length > 0;
   if (!isShop && hasChoicesContent) {
     let groups;
@@ -3499,6 +3636,7 @@ function renderStepperStep(idx) {
       if (stolenReturned.length > 0) {
         groups = [...stolenReturned.map(c => [c]), ...groups];
       }
+      for (const c of curseRewards) groups.push([c]);
     } else {
       // Build groups explicitly: stolen-returned and bonus cards each get
       // their own 1-card batch, then card_choices go through standard
@@ -3509,25 +3647,31 @@ function renderStepperStep(idx) {
       if (step.cardChoices.length > 0) {
         groups.push(...groupCardChoices(step.cardChoices));
       }
+      for (const c of curseRewards) groups.push([c]);
     }
 
-    const groupRows = groups.map((group, gi) => {
+    const nonCurseCount = groups.filter(g => !(g.length === 1 && g[0]._isCurse)).length;
+    let rewardNum = 0;
+    const groupRows = groups.map((group) => {
+      const isCurseGroup = group.length === 1 && group[0]._isCurse;
+      if (!isCurseGroup) rewardNum++;
       const batchPicked = group.some(c => c.was_picked);
       const cards = group.map(ch => {
         const cls = ch.was_picked ? 'chosen' : '';
+        const lbl = isCurseGroup ? 'Added' : 'Picked';
         return `<div class="stepper-choice-wrap">
           ${stepperCardHtml(ch.card, `stepper-choice-card ${cls}`)}
-          ${ch.was_picked ? '<div class="stepper-choice-lbl chosen-lbl">Picked</div>' : ''}
+          ${ch.was_picked ? `<div class="stepper-choice-lbl chosen-lbl">${lbl}</div>` : ''}
         </div>`;
       }).join('');
 
       const skipClass = !batchPicked ? 'chosen' : '';
-      const skipCard = `<div class="stepper-choice-wrap">
+      const skipCard = isCurseGroup ? '' : `<div class="stepper-choice-wrap">
         <div class="stepper-skip-card ${skipClass}">SKIP</div>
         ${!batchPicked ? '<div class="stepper-choice-lbl chosen-lbl">Chosen</div>' : ''}
       </div>`;
 
-      const label = groups.length > 1 ? `Card Reward ${gi + 1}` : 'Card Reward';
+      const label = isCurseGroup ? 'Curse' : (nonCurseCount > 1 ? `Card Reward ${rewardNum}` : 'Card Reward');
       return `<div class="stepper-reward-group">
         <div class="stepper-reward-group-label">${escHtml(label)}</div>
         <div class="stepper-choices">${cards}${skipCard}</div>
