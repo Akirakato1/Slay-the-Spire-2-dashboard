@@ -140,8 +140,10 @@ function thumbToFull(url) {
 }
 
 function decodeFilename(url) {
-  try { return decodeURIComponent(path.basename(new URL(url).pathname)); }
-  catch { return path.basename(url); }
+  let name;
+  try { name = decodeURIComponent(path.basename(new URL(url).pathname)); }
+  catch { name = path.basename(url); }
+  return name.replace(/[<>:"\/\\|?*]/g, '');
 }
 
 // ── HTML tag stripper ─────────────────────────────────────────────────────────
@@ -188,8 +190,33 @@ function boxAttr(boxHtml, attr) {
 }
 
 function innerHtml(html, className) {
-  const m = html.match(new RegExp(`class="[^"]*${escRe(className)}[^"]*"[^>]*>([\\s\\S]*?)<\\/(?:div|span)>`));
-  return m ? m[1] : '';
+  // Find the opening tag with the given class
+  const openRe = new RegExp(`<(div|span)\\b[^>]*\\bclass="[^"]*\\b${escRe(className)}\\b[^"]*"[^>]*>`, 'i');
+  const m = openRe.exec(html);
+  if (!m) return '';
+  const tag = m[1].toLowerCase();
+  const contentStart = m.index + m[0].length;
+  // Depth-track matching closing tag
+  const openPat = new RegExp(`<${tag}[\\s>]`, 'gi');
+  const closePat = new RegExp(`</${tag}>`, 'gi');
+  let depth = 1;
+  let pos = contentStart;
+  while (depth > 0 && pos < html.length) {
+    openPat.lastIndex = pos;
+    closePat.lastIndex = pos;
+    const nextOpen  = openPat.exec(html);
+    const nextClose = closePat.exec(html);
+    if (!nextClose) break;
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++;
+      pos = nextOpen.index + nextOpen[0].length;
+    } else {
+      depth--;
+      if (depth === 0) return html.slice(contentStart, nextClose.index);
+      pos = nextClose.index + nextClose[0].length;
+    }
+  }
+  return '';
 }
 
 function innerText(html, className) { return stripHtml(innerHtml(html, className)); }
@@ -532,6 +559,9 @@ async function updateCards(html) {
     ...newEntries.filter(e => e.imageUpgraded).map(e => [e.imageUpgraded, e.imageFileUpgraded]),
   ];
   await syncImages(toDl, imagesDir, FORCE_IMAGES, DRY_RUN, forceNames);
+
+  // Split multi-frame GIFs (Mad Science variants) into individual frames
+  if (!DRY_RUN) splitMultiFrameCardGifs(imagesDir);
 }
 
 async function updateEnchantments(html) {
@@ -729,6 +759,83 @@ async function updateMapIcons() {
   });
   fs.writeFileSync(MAP_ICONS_META, JSON.stringify(newHashes, null, 2), 'utf8');
   log(`  Images done: ${ok} downloaded, ${fail} failed`);
+}
+
+// ── GIF frame extraction (Mad Science) ───────────────────────────────────────
+
+/**
+ * Extract individual frames from an animated GIF and save each as a
+ * standalone single-frame GIF.  Returns the number of frames written.
+ */
+function extractGifFrames(srcPath, outDir, baseName) {
+  if (!fs.existsSync(srcPath)) return 0;
+  const buf = fs.readFileSync(srcPath);
+  if (buf.toString('ascii', 0, 4) !== 'GIF8') return 0;
+
+  const packed  = buf[10];
+  const hasGCT  = (packed >> 7) & 1;
+  const gctSize = hasGCT ? 3 * (1 << ((packed & 7) + 1)) : 0;
+  const header  = buf.slice(0, 13);
+  const gct     = hasGCT ? buf.slice(13, 13 + gctSize) : Buffer.alloc(0);
+
+  let pos = 13 + gctSize;
+  const frames = [];
+  let curExts  = [];
+
+  while (pos < buf.length) {
+    const intro = buf[pos];
+    if (intro === 0x3B) break;                     // trailer
+    if (intro === 0x21) {                           // extension block
+      const extStart = pos;
+      pos += 2;
+      while (pos < buf.length) { const n = buf[pos]; pos += 1 + n; if (n === 0) break; }
+      curExts.push(buf.slice(extStart, pos));
+    } else if (intro === 0x2C) {                    // image descriptor
+      const imgStart = pos;
+      pos += 1 + 8;                                // intro + x,y,w,h
+      const imgPacked = buf[pos]; pos += 1;
+      const hasLCT = (imgPacked >> 7) & 1;
+      pos += hasLCT ? 3 * (1 << ((imgPacked & 7) + 1)) : 0;
+      pos += 1;                                    // LZW min code size
+      while (pos < buf.length) { const n = buf[pos]; pos += 1 + n; if (n === 0) break; }
+      frames.push({ extensions: curExts, imageData: buf.slice(imgStart, pos) });
+      curExts = [];
+    } else { break; }
+  }
+
+  for (let i = 0; i < frames.length; i++) {
+    const parts = [header, gct];
+    for (const ext of frames[i].extensions) {
+      if (ext[1] === 0xFF) continue;               // skip NETSCAPE loop ext
+      parts.push(ext);
+    }
+    parts.push(frames[i].imageData);
+    parts.push(Buffer.from([0x3B]));
+    const fname = baseName.replace(/\.gif$/i, `_${i + 1}.gif`);
+    fs.writeFileSync(path.join(outDir, fname), Buffer.concat(parts));
+  }
+  return frames.length;
+}
+
+/**
+ * For cards whose wiki images are animated GIFs with multiple variants
+ * (e.g. Mad Science — 9 variations), split the GIF into per-frame files
+ * so the renderer can display the correct variant.
+ */
+function splitMultiFrameCardGifs(imagesDir) {
+  const gifFiles = [
+    'StS2_Colorless-MadScience.gif',
+    'StS2_Colorless-MadSciencePlus.gif',
+  ];
+  for (const fname of gifFiles) {
+    const src = path.join(imagesDir, fname);
+    if (!fs.existsSync(src)) continue;
+    // Only re-extract if frame 1 is missing or older than the source GIF
+    const frame1 = path.join(imagesDir, fname.replace(/\.gif$/i, '_1.gif'));
+    if (fs.existsSync(frame1) && fs.statSync(frame1).mtimeMs >= fs.statSync(src).mtimeMs) continue;
+    const n = extractGifFrames(src, imagesDir, fname);
+    if (n > 0) log(`  Split ${fname} → ${n} frames`);
+  }
 }
 
 // ── Debug helper ──────────────────────────────────────────────────────────────
