@@ -1,0 +1,74 @@
+{
+  "from": "v0.104.0",
+  "to": "v0.103.2",
+  "released_on": "2026-04-23",
+  "summary": "2026-04-23 (Beta v.0.104.0)",
+  "cards": {
+    "Conflagration": {
+      "description": {
+        "old": "Deal 8 damage to ALL enemies. Deals 2 additional damage for each other Attack you've played this turn.",
+        "new": "Deal 2 damage to ALL enemies 4 times."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage to ALL enemies. Deals 3 additional damage for each other Attack you've played this turn.",
+        "new": "Deal 2 damage to ALL enemies 5 times."
+      }
+    },
+    "Drum Of Battle": {
+      "description": {
+        "old": "Draw 2 cards. At the start of your turn, [gold]Exhaust[/gold] the top card of your [gold]Draw Pile[/gold].",
+        "new": "Draw 2 cards. When this card is Exhausted, gain [energy:2] ."
+      },
+      "descriptionUpgraded": {
+        "old": "Draw 3 cards. At the start of your turn, [gold]Exhaust[/gold] the top card of your [gold]Draw Pile[/gold].",
+        "new": "Draw 2 cards. When this card is Exhausted, gain [energy:3] ."
+      },
+      "manaCost": {
+        "old": 0,
+        "new": 1
+      },
+      "manaCostUpgraded": {
+        "old": 0,
+        "new": 1
+      }
+    },
+    "Parry": {
+      "description": {
+        "old": "Whenever you play Sovereign Blade, gain 10 [gold]Block[/gold].",
+        "new": "Sovereign Blade now gains 10 [gold]Block[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you play Sovereign Blade, gain 14 [gold]Block[/gold].",
+        "new": "Sovereign Blade now gains 14 [gold]Block[/gold]."
+      }
+    },
+    "Untouchable": {
+      "descriptionUpgraded": {
+        "old": "Gain 8 [gold]Block[/gold].",
+        "new": "Gain 9 [gold]Block[/gold]."
+      }
+    },
+    "Reflect": {
+      "description": {
+        "old": "Gain 17 [gold]Block[/gold]. Blocked attack damage is reflected to your attacker this turn.",
+        "new": "Gain 21 [gold]Block[/gold]. Blocked attack damage is reflected to your attacker this turn."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 16 [gold]Block[/gold]. Blocked attack damage is reflected to your attacker this turn.",
+        "new": "Gain 20 [gold]Block[/gold]. Blocked attack damage is reflected to your attacker this turn."
+      }
+    },
+    "Neow's Fury": {
+      "description": {
+        "old": "Deal 10 damage. Put 2 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold]. [gold]Exhaust.[/gold].",
+        "new": "Deal 10 damage. Choose up to 2 cards from [gold]Discard Pile[/gold] into your [gold]Hand[/gold]. [gold]Exhaust. [/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 14 damage. Put 3 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold].",
+        "new": "Deal 14 damage. Choose up to 3 cards from [gold]Discard Pile[/gold] into your [gold]Hand[/gold]. [gold]Exhaust. [/gold]"
+      }
+    }
+  },
+  "relics": {},
+  "enchantments": {}
+}
