@@ -2,8 +2,13 @@
 node_modules/
 dist/
 
-# Auto-generated kernel-editor artifacts (per-developer, regenerated on demand)
-kernel-editor/basis/
+# Personal release notes — not for the repo
+CHANGELOG.md
+
+# Auto-generated kernel-editor artifacts (regenerated on demand).
+# basis/ IS committed: it's a baseline snapshot bundled for kernel-editor
+# users who don't have the dashboard app installed (and therefore can't
+# generate their own basis from <userData>/sts2-dashboard/).
 kernel-editor/kernel-notes/
 kernel-editor/node_modules/
 
