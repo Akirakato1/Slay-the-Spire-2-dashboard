@@ -53,14 +53,16 @@ function formatDurationFull(seconds) {
 // ── Asset data & lookup ───────────────────────────────────────────────────────
 
 let relicsMap       = new Map(); // normalized name → relic object
-let cardsMap        = new Map(); // normalized name → card object
+let cardsMap        = new Map(); // normalized name → card object (last variant wins on name collision)
+let cardsByNameChar = new Map(); // "normName|lowerCharacter" → card — disambiguates Strike/Defend
 let enchantmentsMap = new Map(); // normalized name → enchantment object
 let eventsMap       = new Map(); // normalized name → event object
 let potionsMap      = new Map(); // normalized name → potion object
 
 function normalizeName(str) {
-  return str.toLowerCase()
-    .replace(/[()'']/g, '')
+  return String(str || '').toLowerCase()
+    .replace(/[()'']/g, '')           // straight + smart apostrophe drop
+    .replace(/[-_\/]/g, ' ')          // unify separators so wiki "Flick-Flack" matches data "Flick Flack"
     .replace(/[^a-z0-9 ]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -80,11 +82,40 @@ async function loadAssetData() {
     const enchantments = await eRes.json();
     const events       = await evRes.json();
     const potions      = await pRes.json();
+    relicsMap.clear();
+    cardsMap.clear();
+    cardsByNameChar.clear();
+    enchantmentsMap.clear();
+    eventsMap.clear();
+    potionsMap.clear();
     for (const r of relics)       relicsMap.set(normalizeName(r.name), r);
-    for (const c of cards)        cardsMap.set(normalizeName(c.name), c);
+    for (const c of cards) {
+      cardsMap.set(normalizeName(c.name), c);
+      // Strike/Defend collide on name (5 character-specific variants share
+      // the name "Strike" / "Defend"). Index by name + character so
+      // lookupCardData can disambiguate from a card id like
+      // CARD.STRIKE_IRONCLAD.
+      if (c.character) {
+        cardsByNameChar.set(normalizeName(c.name) + '|' + c.character.toLowerCase(), c);
+      }
+    }
     for (const e of enchantments) enchantmentsMap.set(normalizeName(e.name), e);
     for (const ev of events)      eventsMap.set(normalizeName(ev.name), ev);
     for (const p of potions)      potionsMap.set(normalizeName(p.name), p);
+    // The card_render_helper caches its own copy of cards.json + kernels for
+    // canvas rendering. After we just reloaded the data here, force it to
+    // re-fetch on the next render call so old saves render against fresh
+    // current-data + fresh kernels (post-pipeline).
+    if (window.cardRenderHelper && window.cardRenderHelper.reload) {
+      window.cardRenderHelper.reload();
+    }
+    // Pre-warm the helper now (don't await) so the shell bake starts
+    // immediately after data load instead of on first card render. By the
+    // time the user opens a save, shells are likely on disk already, so
+    // the per-card render skips the slow HSV pipeline.
+    if (window.cardRenderHelper && window.cardRenderHelper.ensureReady) {
+      window.cardRenderHelper.ensureReady().catch(() => {});
+    }
   } catch (e) {
     console.warn('Asset data load failed:', e);
   }
@@ -104,49 +135,206 @@ function mapLookup(map, name) {
   return map.get(key) || map.get('the ' + key) || null;
 }
 
+// ── Kernel-based historical reconstruction (backward chain) ─────────────────
+//
+// Architecture: each kernel is a backward delta — its entries record the OLD
+// (pre-patch) field values of any entity that changed in that patch. The
+// kernel reverts FROM `from_version` TO `to_version`. To reconstruct a
+// save's view at its build_id:
+//
+//   recon = {}                                                 // overrides only
+//   for each kernel where from_version > save.build_id, in DESCENDING from_version order:
+//     for each entity in the kernel, override its listed fields on recon[entity]
+//   → recon[entity] = state at save.build_id (the LAST kernel applied is the
+//     one closest to the save's version, so its old values win per field)
+//
+// Per-field lookup merges recon over live data. Entities never mentioned in
+// any kernel ≥ save.build_id stay at live data, which is correct (they
+// haven't changed since). Insights stays on live data (Phase 1 scope).
+
+let _kernelsBundle = null;
+let _activeRecon   = null;     // { cards: {normName → fields}, relics: {…}, events: {…}, … } or null
+let _activeBuildId = null;     // run's build_id when rendering a save-bound view; null otherwise
+
+async function loadKernelsBundle() {
+  try {
+    const bundle = await window.electronAPI.getKernelsBundle();
+    if (bundle && bundle.manifest) _kernelsBundle = bundle;
+  } catch (e) { console.warn('Kernel bundle load failed:', e); }
+}
+
+// Compare semver-ish "v0.99.1" / "v0.99" (treats missing patch as 0).
+function _parseVer(s) {
+  const m = String(s || '').match(/v?(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (!m) return [0, 0, 0];
+  return [parseInt(m[1], 10), parseInt(m[2], 10), m[3] != null ? parseInt(m[3], 10) : 0];
+}
+function _cmpVer(a, b) {
+  const [a1,a2,a3] = _parseVer(a), [b1,b2,b3] = _parseVer(b);
+  return (a1-b1) || (a2-b2) || (a3-b3);
+}
+
+const _RECON_CATS = ['cards', 'relics', 'events', 'potions', 'enchantments'];
+
+// Compose the per-entity reconstructed view for a save at `targetVersion`.
+// Returns null when no kernels apply (run is at or beyond current data).
+// Otherwise returns a per-cat dict of override fields.
+function composeReconForVersion(targetVersion) {
+  if (!_kernelsBundle || !targetVersion) return null;
+  const { kernels } = _kernelsBundle;
+  if (!kernels) return null;
+
+  // Each kernel knows its own `from`/`to` versions; we don't need the
+  // manifest's index. Walk kernels whose `from` is later than targetVersion
+  // (i.e., need reverting past). Apply newest-first → oldest-last so the
+  // kernel closest to the target wins per field.
+  const chain = Object.values(kernels)
+    .filter(k => k && k.from && _cmpVer(k.from, targetVersion) > 0)
+    .sort((a, b) => _cmpVer(b.from, a.from));
+  if (!chain.length) return null;
+
+  const recon = {};
+  for (const c of _RECON_CATS) recon[c] = {};
+
+  for (const k of chain) {
+    for (const cat of _RECON_CATS) {
+      const block = k[cat] || {};
+      for (const [name, entry] of Object.entries(block)) {
+        const key = normalizeName(name);
+        if (!recon[cat][key]) recon[cat][key] = { _name: name };
+        const slot = recon[cat][key];
+        for (const [field, val] of Object.entries(entry)) {
+          if (field.startsWith('_')) continue;
+          // New schema: each field is `{ old, new }`. Backward apply takes
+          // `old`. Legacy primitive form (pre-finalized-schema kernels) is
+          // tolerated as a fallback.
+          const oldVal = (val && typeof val === 'object' && 'old' in val) ? val.old : val;
+          if (oldVal !== '' && oldVal !== null && oldVal !== undefined) slot[field] = oldVal;
+        }
+      }
+    }
+  }
+  return recon;
+}
+
+function setActiveRecon(targetVersion) {
+  _activeRecon   = composeReconForVersion(targetVersion);
+  _activeBuildId = targetVersion || null;
+}
+function clearActiveRecon() {
+  _activeRecon   = null;
+  _activeBuildId = null;
+}
+
+// Return the recon override for an entity (category + display name), or null
+// if recon is inactive / this entity wasn't touched by any kernel in scope.
+function _reconLookup(cat, displayName) {
+  if (!_activeRecon) return null;
+  const slot = _activeRecon[cat];
+  if (!slot) return null;
+  const key = normalizeName(displayName);
+  return slot[key] || slot['the ' + key] || null;
+}
+
+// Merge a recon override on top of the live data entry. The override only
+// supplies fields the kernel chain explicitly recorded; the rest stay live.
+function _mergedLookup(cat, liveMap, displayName) {
+  const live  = mapLookup(liveMap, displayName);
+  const recon = _reconLookup(cat, displayName);
+  if (!recon) return live;
+  if (!live)  return { name: recon._name || displayName, ...recon };
+  return { ...live, ...recon };
+}
+
 function lookupRelicData(id) {
-  return mapLookup(relicsMap, idToDisplayName(id));
+  return _mergedLookup('relics', relicsMap, idToDisplayName(id));
 }
 
 // Canonical normalized name for an id, matched against a name→data map.
 // Falls back to a 'the ' prefix because relics like "The Chosen Cheese" are stored
 // as RELIC.CHOSEN_CHEESE in run data but as "The Chosen Cheese" in the JSON.
+//
+// Class-suffix fallback: CARD.STRIKE_IRONCLAD / CARD.DEFEND_DEFECT etc. are
+// stored in cards.json as plain "Strike" / "Defend" (one entry per character
+// — the character distinguishes the variant). idToDisplayName produces
+// "Strike Ironclad" which won't match. After the regular tries, strip a
+// trailing player-class word and try again.
+const _CLASS_SUFFIXES = ['ironclad', 'silent', 'defect', 'necrobinder', 'regent'];
+function _stripClassSuffix(normKey) {
+  for (const ch of _CLASS_SUFFIXES) {
+    const suf = ' ' + ch;
+    if (normKey.endsWith(suf)) return normKey.slice(0, -suf.length);
+  }
+  return null;
+}
+
 function idToMapKey(id, map) {
   const key = normalizeName(idToDisplayName(id));
   if (map.has(key)) return key;
   if (map.has('the ' + key)) return 'the ' + key;
+  const bare = _stripClassSuffix(key);
+  if (bare && map.has(bare)) return bare;
   return key;
 }
 
+// Extract the character class from a class-specific basic-card id like
+// CARD.STRIKE_IRONCLAD → "Ironclad". Returns null when the id doesn't match
+// the pattern.
+function _classFromBasicId(id) {
+  if (typeof id !== 'string') return null;
+  const m = id.match(/^CARD\.(?:STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT)$/);
+  return m ? m[1].charAt(0) + m[1].slice(1).toLowerCase() : null;
+}
+
+// Card lookup that disambiguates Strike/Defend variants by character. The
+// character-specific map (`cardsByNameChar`) holds entries keyed by
+// "<normalizedName>|<lowercaseCharacter>"; preferred when the id encodes a
+// class. Falls back to the generic name lookup so non-basic cards still hit.
 function lookupCardData(id) {
-  return mapLookup(cardsMap, idToDisplayName(id));
+  if (typeof id === 'string') {
+    const cls = _classFromBasicId(id);
+    if (cls) {
+      const display = id.split('.')[1].split('_')[0];   // "STRIKE" / "DEFEND"
+      const bareName = display.charAt(0) + display.slice(1).toLowerCase();
+      const charKey = normalizeName(bareName) + '|' + cls.toLowerCase();
+      const variant = cardsByNameChar.get(charKey);
+      if (variant) {
+        // Run recon overrides still apply — wrap through _mergedLookup but
+        // replace the live entry it'd find with the character-specific one.
+        const recon = _reconLookup('cards', bareName);
+        return recon ? { ...variant, ...recon } : variant;
+      }
+    }
+  }
+  return _mergedLookup('cards', cardsMap, idToDisplayName(id));
 }
 
 /**
- * For Mad Science (which has 9 variants stored as individual GIF frames),
- * return the correct per-variant image file based on the card's TinkerTimeRider prop.
- * Returns { imageFile, imageFileUpgraded } overrides, or null if not applicable.
+ * Multi-variant cards (currently only Mad Science) record which of the 9
+ * type×rider combinations the player got via a TinkerTimeRider int prop on
+ * the card. Returns a 0-indexed rider value (0..8) or null if the card has
+ * no such prop.
+ *
+ * The save format stores TinkerTimeRider as 1-indexed (1..9) — value 1 is
+ * attack/Sapping, 9 is power/Improvement. The renderer's _applyTinkerVariant
+ * uses 0..8 (Math.floor(i/3) for type, i%3 for rider-within-type), so we
+ * subtract 1 here to land on the same convention.
  */
-function getMadScienceImageOverride(card) {
-  if (!card || !card.props) return null;
-  const id = card.id || '';
-  if (id !== 'CARD.MAD_SCIENCE') return null;
-  const ints = card.props.ints || [];
-  const rider = ints.find(p => p.name === 'TinkerTimeRider');
-  if (!rider) return null;
-  const idx = rider.value + 1; // TinkerTimeRider is 0-indexed (0–8), frame files are 1-indexed
-  return {
-    imageFile:         `StS2_Colorless-MadScience_${idx}.gif`,
-    imageFileUpgraded: `StS2_Colorless-MadSciencePlus_${idx}.gif`,
-  };
+function tinkerRiderForCard(card) {
+  if (!card || !card.props || !Array.isArray(card.props.ints)) return null;
+  const rider = card.props.ints.find(p => p && p.name === 'TinkerTimeRider');
+  if (!rider || typeof rider.value !== 'number') return null;
+  const idx = rider.value - 1;
+  if (idx < 0 || idx > 8) return null;
+  return idx;
 }
 
 function lookupEnchantmentData(id) {
-  return mapLookup(enchantmentsMap, idToDisplayName(id));
+  return _mergedLookup('enchantments', enchantmentsMap, idToDisplayName(id));
 }
 
 function lookupPotionData(id) {
-  return mapLookup(potionsMap, idToDisplayName(id));
+  return _mergedLookup('potions', potionsMap, idToDisplayName(id));
 }
 
 // ── Ascension filter ─────────────────────────────────────────────────────────
@@ -182,6 +370,46 @@ function initAscFilter(allLevels) {
   updateAscBtn();
 }
 
+// ── Version filter ──────────────────────────────────────────────────────────
+// Filters runs by build_id. Same UX as the Ascension filter: a button shows
+// summary state, a panel opens with check-all / uncheck-all + per-version
+// checkboxes. `currentFilters.versions` follows the same convention as
+// `ascLevels` (null = all, Set = specific values).
+
+let _versionAllValues = [];
+
+function updateVersionBtn() {
+  const btn = document.getElementById('versionFilterBtn');
+  if (!btn) return;
+  const sel = currentFilters.versions;
+  if (sel === null || sel.size === _versionAllValues.length) {
+    btn.textContent = 'All';
+  } else if (sel.size === 0) {
+    btn.textContent = 'None';
+  } else if (sel.size <= 3) {
+    btn.textContent = [..._versionAllValues].filter(v => sel.has(v)).join(', ');
+  } else {
+    btn.textContent = `${sel.size} of ${_versionAllValues.length}`;
+  }
+}
+
+// Sort versions newest → oldest (matches how the manifest lists them).
+function _cmpVerDesc(a, b) { return _cmpVer(b, a); }
+
+function initVersionFilter(allValues) {
+  _versionAllValues = [...allValues].sort(_cmpVerDesc);
+  const list = document.getElementById('versionCheckboxList');
+  if (!list) return;
+  list.innerHTML = _versionAllValues.map(v => {
+    const checked = currentFilters.versions === null || currentFilters.versions.has(v);
+    return `<label class="asc-checkbox-item">
+      <input type="checkbox" class="version-checkbox" data-version="${escHtml(v)}"${checked ? ' checked' : ''} />
+      ${escHtml(v)}
+    </label>`;
+  }).join('');
+  updateVersionBtn();
+}
+
 // ── Card / Relic search filter ────────────────────────────────────────────────
 
 function searchCardsAndRelics(query) {
@@ -212,7 +440,7 @@ function renderSearchTokens() {
     el.dataset.normalizedName = token.normalizedName;
     if (token.type === 'relic' && token.imageFile) {
       el.title = token.name;
-      el.innerHTML = `<img src="appdata://images/relic_images/${escHtml(token.imageFile)}" alt="${escHtml(token.name)}" /><span class="search-token-x">×</span>`;
+      el.innerHTML = `<img src="appdata://images/${escHtml(token.imageFile)}" alt="${escHtml(token.name)}" /><span class="search-token-x">×</span>`;
     } else {
       el.innerHTML = `<span class="search-token-name">${escHtml(token.name)}</span><span class="search-token-x">×</span>`;
     }
@@ -232,7 +460,7 @@ function renderExcludeTokens() {
     el.dataset.normalizedName = token.normalizedName;
     if (token.type === 'relic' && token.imageFile) {
       el.title = token.name;
-      el.innerHTML = `<img src="appdata://images/relic_images/${escHtml(token.imageFile)}" alt="${escHtml(token.name)}" /><span class="search-token-x">×</span>`;
+      el.innerHTML = `<img src="appdata://images/${escHtml(token.imageFile)}" alt="${escHtml(token.name)}" /><span class="search-token-x">×</span>`;
     } else {
       el.innerHTML = `<span class="search-token-name">${escHtml(token.name)}</span><span class="search-token-x">×</span>`;
     }
@@ -258,7 +486,7 @@ function updateExcludeDropdown() {
 
   dropdown.innerHTML = results.map(r => {
     const icon = r.type === 'relic' && r.imageFile
-      ? `<img class="search-dropdown-icon" src="appdata://images/relic_images/${escHtml(r.imageFile)}" alt="" />`
+      ? `<img class="search-dropdown-icon" src="appdata://images/${escHtml(r.imageFile)}" alt="" />`
       : `<div class="search-dropdown-card-stub">C</div>`;
     return `<div class="search-dropdown-item"
       data-normalized="${escHtml(r.normalizedName)}"
@@ -290,7 +518,7 @@ function updateSearchDropdown() {
 
   dropdown.innerHTML = results.map(r => {
     const icon = r.type === 'relic' && r.imageFile
-      ? `<img class="search-dropdown-icon" src="appdata://images/relic_images/${escHtml(r.imageFile)}" alt="" />`
+      ? `<img class="search-dropdown-icon" src="appdata://images/${escHtml(r.imageFile)}" alt="" />`
       : `<div class="search-dropdown-card-stub">C</div>`;
     return `<div class="search-dropdown-item"
       data-normalized="${escHtml(r.normalizedName)}"
@@ -316,6 +544,7 @@ const currentFilters = {
   searchTokens: [],    // { type, normalizedName, name, imageFile }
   excludeTokens: [],   // { type, normalizedName, name, imageFile }
   ascLevels: null,     // null = all; Set<number> = specific levels
+  versions:  null,     // null = all; Set<string> = specific build_ids (e.g. "v0.103.2")
   favoritedOnly: false,
 };
 
@@ -350,6 +579,11 @@ function applyFilters(allRuns, filters) {
     if (filters.ascLevels !== null) {
       const asc = typeof run.ascension === 'number' ? run.ascension : 0;
       if (!filters.ascLevels.has(asc)) return false;
+    }
+
+    if (filters.versions !== null) {
+      const v = String(run.build_id || '');
+      if (!filters.versions.has(v)) return false;
     }
 
     if (filters.favoritedOnly && !favoritesSet.has(runKey(run))) return false;
@@ -605,7 +839,7 @@ function lookupEventByModelId(modelId) {
   if (!modelId || !modelId.startsWith('EVENT.')) return null;
   const slug = modelId.slice(6);
   const name = slug.split('_').map(w => w[0] + w.slice(1).toLowerCase()).join(' ');
-  return mapLookup(eventsMap, name);
+  return _mergedLookup('events', eventsMap, name);
 }
 
 function formatModelDisplay(modelId) {
@@ -820,7 +1054,7 @@ function openNodePopup(nodeIdx) {
     const evData = lookupEventByModelId(node.modelId);
     if (evData) {
       if (evData.imageFile) {
-        detailsHtml += `<img src="appdata://images/event_images/${escHtml(evData.imageFile)}" alt="${escHtml(evData.name)}" class="node-popup-event-img"/>`;
+        detailsHtml += `<img src="appdata://images/${escHtml(evData.imageFile)}" alt="${escHtml(evData.name)}" class="node-popup-event-img"/>`;
       }
       if (evData.description) {
         detailsHtml += `<p class="node-popup-desc">${escHtml(evData.description)}</p>`;
@@ -871,6 +1105,10 @@ function openNodePopup(nodeIdx) {
 function showRunDetail(run) {
   _currentDetailRun = run;
   _detailPlayerIdx  = 0;
+  // Activate per-run reconstruction so all subsequent lookups in this view
+  // (relics, cards, events, popups, deck stepper) consult kernel overrides
+  // for runs played on older patches.
+  setActiveRecon(run.build_id);
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('insightsView').style.display = 'none';
   document.getElementById('runDetailView').style.display = '';
@@ -927,6 +1165,7 @@ function showRunDetail(run) {
 function hideRunDetail() {
   document.getElementById('runDetailView').style.display = 'none';
   document.getElementById('mainContent').style.display = '';
+  clearActiveRecon();
   navPush({ view: 'home' });
 }
 
@@ -958,6 +1197,16 @@ function renderDetailMeta(run) {
   if (run.score != null) stats.push({ label: 'Score', value: run.score });
   if (run.gold  != null) stats.push({ label: 'Gold',  value: `${run.gold}g` });
 
+  if (run.build_id) {
+    const reconActive = !!_activeRecon;
+    stats.push({
+      label: 'Game Version',
+      value: reconActive ? `${run.build_id} · reconstructed` : run.build_id,
+      mono: true,
+      cls: reconActive ? 'recon-active' : '',
+    });
+  }
+
   document.getElementById('detailMetaRow').innerHTML = stats.map(({ label, value, cls, mono }) => `
     <div class="detail-stat">
       <span class="detail-stat-label">${escHtml(label)}</span>
@@ -982,7 +1231,7 @@ function renderDetailRelics(relics) {
     const data = typeof id === 'string' ? lookupRelicData(id) : null;
 
     const imgHtml = data?.imageFile
-      ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+      ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
       : `<div class="relic-icon-placeholder">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
 
     return `
@@ -1048,20 +1297,28 @@ function renderDetailDeck(deck) {
     const enchData = enchId ? lookupEnchantmentData(enchId) : null;
     const enchName = enchData?.name || (enchId ? idToDisplayName(enchId) : null);
 
+    // Card image: hand off to the canvas-2D renderer via card_render_helper.
+    // The helper hydrates `<img data-card-name>` placeholders after they hit
+    // the DOM, replacing src with a rendered data URL. data-build-id keeps
+    // the rendered art version-accurate when a save is selected;
+    // data-card-character disambiguates Strike/Defend variants.
     let inner;
-    const msOverride = getMadScienceImageOverride(card);
-    if (data?.imageFile) {
-      let imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
-      if (msOverride) imgFile = upgraded ? msOverride.imageFileUpgraded : msOverride.imageFile;
-      const displayName = data.name || name;
-      inner = `<img src="appdata://images/card_images/${escHtml(imgFile)}" alt="${escHtml(displayName)}" loading="lazy" />`;
+    if (data?.name || name) {
+      const displayName = data?.name || name;
+      const buildAttr   = _activeBuildId ? ` data-build-id="${escHtml(_activeBuildId)}"` : '';
+      const charAttr    = data?.character ? ` data-card-character="${escHtml(data.character)}"` : '';
+      const rider       = tinkerRiderForCard(card);
+      const riderAttr   = rider != null ? ` data-tinker-rider="${rider}"` : '';
+      inner = `<img class="card-render-target" data-card-name="${escHtml(displayName)}"`
+            + ` data-upgraded="${upgraded ? 'true' : 'false'}"${charAttr}${buildAttr}${riderAttr}`
+            + ` src="${window.cardRenderHelper.PLACEHOLDER}" alt="${escHtml(displayName)}" loading="lazy" />`;
     } else {
       inner = `<div class="card-img-placeholder">${escHtml(name)}</div>`;
     }
 
     const enchIconHtml = enchName && enchData?.imageFile
       ? `<button class="card-enchant-icon" data-enchant-id="${escHtml(enchId)}" title="${escHtml(enchName)}">
-           <img src="appdata://images/enchantment_images/${escHtml(enchData.imageFile)}" alt="${escHtml(enchName)}" />
+           <img src="appdata://images/${escHtml(enchData.imageFile)}" alt="${escHtml(enchName)}" />
          </button>`
       : '';
 
@@ -1082,7 +1339,7 @@ function openRelicPopup(relicEntry) {
 
   const imgWrap = document.getElementById('popupRelicImgWrap');
   imgWrap.innerHTML = data?.imageFile
-    ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+    ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
     : `<div class="relic-icon-placeholder large">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
 
   document.getElementById('popupRelicName').textContent = data?.name || name;
@@ -1092,7 +1349,7 @@ function openRelicPopup(relicEntry) {
   if (data?.character) metaParts.push(data.character);
   document.getElementById('popupRelicMeta').textContent = metaParts.join(' · ');
 
-  document.getElementById('popupRelicDesc').textContent = data?.description || '—';
+  document.getElementById('popupRelicDesc').innerHTML = formatDescriptionHtml(data?.description);
 
   document.getElementById('relicPopup').style.display = 'flex';
 }
@@ -1102,33 +1359,39 @@ function closeRelicPopup() {
 }
 
 function openRelicPopupByName(name) {
-  const data = mapLookup(relicsMap, name);
+  const data = _mergedLookup('relics', relicsMap, name);
   const imgWrap = document.getElementById('popupRelicImgWrap');
   imgWrap.innerHTML = data?.imageFile
-    ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+    ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
     : `<div class="relic-icon-placeholder large">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
   document.getElementById('popupRelicName').textContent = data?.name || name;
   const metaParts = [];
   if (data?.rarity)    metaParts.push(data.rarity);
   if (data?.character) metaParts.push(data.character);
   document.getElementById('popupRelicMeta').textContent = metaParts.join(' · ');
-  document.getElementById('popupRelicDesc').textContent = data?.description || '—';
+  document.getElementById('popupRelicDesc').innerHTML = formatDescriptionHtml(data?.description);
   document.getElementById('relicPopup').style.display = 'flex';
 }
 
 function openCardPopup(cardName) {
-  const data = mapLookup(cardsMap, cardName);
+  const data = _mergedLookup('cards', cardsMap, cardName);
   document.getElementById('cardPopupName').textContent = data?.name || cardName;
   const metaParts = [];
   if (data?.type)   metaParts.push(data.type);
   if (data?.rarity) metaParts.push(data.rarity);
   document.getElementById('cardPopupMeta').textContent = metaParts.join(' · ');
 
-  const baseImg = data?.imageFile
-    ? `<img src="appdata://images/card_images/${escHtml(data.imageFile)}" alt="${escHtml(cardName)}" />`
+  // Detail popup: render base + upgraded via card_render_helper. The popup
+  // is invoked outside save context (browsing the card library), so no
+  // build-id is supplied — uses current data. data-card-character pins
+  // Strike/Defend variants to the right character.
+  const buildAttr = _activeBuildId ? ` data-build-id="${escHtml(_activeBuildId)}"` : '';
+  const charAttr  = data?.character ? ` data-card-character="${escHtml(data.character)}"` : '';
+  const baseImg = data?.name
+    ? `<img class="card-render-target" data-card-name="${escHtml(data.name)}" data-upgraded="false"${charAttr}${buildAttr} src="${window.cardRenderHelper.PLACEHOLDER}" alt="${escHtml(cardName)}" />`
     : `<div class="card-img-placeholder">${escHtml(cardName)}</div>`;
-  const upImg = data?.imageFileUpgraded
-    ? `<img src="appdata://images/card_images/${escHtml(data.imageFileUpgraded)}" alt="${escHtml(cardName)}+" />`
+  const upImg = data?.canUpgrade
+    ? `<img class="card-render-target" data-card-name="${escHtml(data.name)}" data-upgraded="true"${charAttr}${buildAttr} src="${window.cardRenderHelper.PLACEHOLDER}" alt="${escHtml(cardName)}+" />`
     : '';
 
   document.getElementById('cardPopupImages').innerHTML =
@@ -1143,21 +1406,20 @@ function closeCardPopup() {
 }
 
 function openEventPopup(name) {
-  const data = mapLookup(eventsMap, name);
+  const data = _mergedLookup('events', eventsMap, name);
   const imgWrap = document.getElementById('eventPopupImgWrap');
   imgWrap.innerHTML = data?.imageFile
-    ? `<img src="appdata://images/event_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+    ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
     : `<div class="event-img-placeholder">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
   document.getElementById('eventPopupName').textContent = data?.name || name;
   const desc   = data?.description || '';
   const flavor = data?.flavor || '';
   // When no description, promote flavor to primary text; when both exist show description primary
-  document.getElementById('eventPopupDesc').textContent = desc || flavor || '—';
-  document.getElementById('eventPopupFlavor').textContent = desc ? flavor : '';
+  document.getElementById('eventPopupDesc').innerHTML   = formatDescriptionHtml(desc || flavor);
+  document.getElementById('eventPopupFlavor').innerHTML = desc ? formatDescriptionHtml(flavor) : '';
   document.getElementById('eventPopupFlavor').style.display = (desc && flavor) ? '' : 'none';
   document.getElementById('eventPopup').style.display = 'flex';
 }
-
 function closeEventPopup() {
   document.getElementById('eventPopup').style.display = 'none';
 }
@@ -1168,7 +1430,7 @@ function openPotionPopup(id) {
 
   const imgWrap = document.getElementById('popupPotionImgWrap');
   imgWrap.innerHTML = data?.imageFile
-    ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
+    ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
     : `<div class="relic-icon-placeholder large">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
 
   document.getElementById('popupPotionName').textContent = data?.name || name;
@@ -1178,11 +1440,10 @@ function openPotionPopup(id) {
   if (data?.character) metaParts.push(data.character);
   document.getElementById('popupPotionMeta').textContent = metaParts.join(' · ');
 
-  document.getElementById('popupPotionDesc').textContent = data?.description || '—';
+  document.getElementById('popupPotionDesc').innerHTML = formatDescriptionHtml(data?.description);
 
   document.getElementById('potionPopup').style.display = 'flex';
 }
-
 function closePotionPopup() {
   document.getElementById('potionPopup').style.display = 'none';
 }
@@ -1190,7 +1451,7 @@ function closePotionPopup() {
 function openEnchantmentPopup(data) {
   const imgWrap = document.getElementById('popupRelicImgWrap');
   imgWrap.innerHTML = data.imageFile
-    ? `<img src="appdata://images/enchantment_images/${escHtml(data.imageFile)}" alt="${escHtml(data.name)}" />`
+    ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(data.name)}" />`
     : `<div class="relic-icon-placeholder large">${escHtml((data.name || '?').slice(0, 2).toUpperCase())}</div>`;
 
   document.getElementById('popupRelicName').textContent = data.name || '—';
@@ -1200,7 +1461,7 @@ function openEnchantmentPopup(data) {
   if (data.targetCard) metaParts.push(`Applies to: ${data.targetCard}`);
   document.getElementById('popupRelicMeta').textContent = metaParts.join(' · ');
 
-  document.getElementById('popupRelicDesc').textContent = data.description || '—';
+  document.getElementById('popupRelicDesc').innerHTML = formatDescriptionHtml(data.description);
 
   document.getElementById('relicPopup').style.display = 'flex';
 }
@@ -1365,8 +1626,8 @@ function renderAllRuns(runs) {
     const date      = formatDate(run.start_time);
     const dur       = formatDurationFull(run.run_time);
     const outcome   = outcomeLabel(run);
-    const relicCount = players.reduce((s, p) => s + (p.relics || []).length, 0);
-    const cardCount  = players.reduce((s, p) => s + (p.deck   || []).length, 0);
+    const cardCount = players.reduce((s, p) => s + (p.deck || []).length, 0);
+    const version   = run.build_id || '—';
     const isFav      = favoritesSet.has(runKey(run));
 
     let badgeClass = 'badge-abandoned';
@@ -1387,8 +1648,9 @@ function renderAllRuns(runs) {
         <td class="col-result">${resultBadge}</td>
         <td class="col-date run-date">${date}</td>
         <td class="col-death">${deathCell}</td>
+        <td class="col-version">${escHtml(version)}</td>
         <td class="col-dur run-dur">${dur}</td>
-        <td class="col-counts"><span class="run-counts">${relicCount}R · ${cardCount}C</span></td>
+        <td class="col-counts"><span class="run-counts">${cardCount}</span></td>
         <td class="col-arrow">›</td>
       </tr>`;
   }).join('');
@@ -1404,8 +1666,9 @@ function renderAllRuns(runs) {
           <th class="col-result">Result</th>
           <th class="col-date">Date</th>
           <th class="col-death">Killed By</th>
+          <th class="col-version">Version</th>
           <th class="col-dur">Duration</th>
-          <th class="col-counts"></th>
+          <th class="col-counts">Cards</th>
           <th class="col-arrow"></th>
         </tr>
       </thead>
@@ -1471,6 +1734,48 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// Convert simplifier-emitted description markup to safe HTML. Same token set
+// the canvas card renderer parses: color spans, inline icons, and `\n`
+// breaks. Used for non-card popups (relics / events / potions / enchantments).
+//
+// Color tags observed in data + kernels: gold, green, purple, blue, red,
+// orange, aqua. Style tag: `b` (bold). Animation tags (sine, jitter, etc.)
+// surround text we still want to display — we strip the tags and keep the
+// content so descriptions render legibly even without animation.
+const _COLOR_TAGS    = ['gold', 'green', 'purple', 'blue', 'red', 'orange', 'aqua'];
+const _BOLD_TAGS     = ['b'];
+// Anything we recognize as a pass-through wrapper. Anything else is left
+// as literal text so a never-before-seen tag doesn't get silently eaten.
+const _STRIPPABLE_TAGS = ['sine', 'jitter', 'wave', 'shake'];
+
+function formatDescriptionHtml(s) {
+  if (s == null || s === '') return '—';
+  // Escape HTML first so user-data content is safe; the markup tokens we
+  // care about ([gold] etc.) don't contain HTML-special chars so they
+  // survive the escape unchanged.
+  let h = escHtml(String(s));
+  for (const c of _COLOR_TAGS) {
+    const re = new RegExp(`\\[${c}\\]([\\s\\S]*?)\\[/${c}\\]`, 'gi');
+    h = h.replace(re, `<span class="md-${c}">$1</span>`);
+  }
+  for (const t of _BOLD_TAGS) {
+    const re = new RegExp(`\\[${t}\\]([\\s\\S]*?)\\[/${t}\\]`, 'gi');
+    h = h.replace(re, '<strong>$1</strong>');
+  }
+  for (const t of _STRIPPABLE_TAGS) {
+    const re = new RegExp(`\\[${t}\\]([\\s\\S]*?)\\[/${t}\\]`, 'gi');
+    h = h.replace(re, '$1');
+  }
+  // Inline icons (icon assets from the bundled card-render dir).
+  h = h.replace(/\[energy:(\d+)\]/gi, (_m, n) =>
+    '<img class="md-icon" src="cardassets://Mana/energy_colorless.png" alt="energy"/>'.repeat(parseInt(n, 10)));
+  h = h.replace(/\[star:(\d+)\]/gi, (_m, n) =>
+    '<img class="md-icon" src="cardassets://Icons/star_icon.png" alt="star"/>'.repeat(parseInt(n, 10)));
+  // Preserve line breaks the simplifier emits (one keyword per line, etc).
+  h = h.replace(/\n/g, '<br>');
+  return h;
+}
+
 // ── Insights View ─────────────────────────────────────────────────────────────
 
 const MIN_SAMPLES = 3;  // used for upgrade, pick rates
@@ -1494,6 +1799,9 @@ let _cardTrioSortDesc  = true;
 let _insightSortHandlers = null;
 
 function showInsights() {
+  // Insights aggregates across runs of potentially-different versions, so it
+  // always uses live current data — never per-run reconstruction (Phase 1).
+  clearActiveRecon();
   document.getElementById('mainContent').style.display   = 'none';
   document.getElementById('runDetailView').style.display = 'none';
   document.getElementById('insightsView').style.display  = '';
@@ -1835,7 +2143,7 @@ function renderInsightsView(runs) {
   };
   const relicIcon = (imgFile, name) => {
     const inner = imgFile
-      ? `<img src="appdata://images/relic_images/${escHtml(imgFile)}" alt="${escHtml(name)}" class="insight-relic-icon" title="${escHtml(name)}" />`
+      ? `<img src="appdata://images/${escHtml(imgFile)}" alt="${escHtml(name)}" class="insight-relic-icon" title="${escHtml(name)}" />`
       : `<span class="insight-relic-placeholder" title="${escHtml(name)}">${escHtml(name.slice(0,2))}</span>`;
     return `<span class="insight-relic-clickable" data-relic-name="${escHtml(name)}">${inner}</span>`;
   };
@@ -2192,6 +2500,13 @@ async function loadAndRender() {
   )].sort((a, b) => a - b);
   initAscFilter(ascLevels);
 
+  // Same idea for build_id versions — populated from whatever runs are
+  // present so the dropdown only shows versions the user has actually played.
+  const versions = [...new Set(
+    files.map(r => r.build_id).filter(v => typeof v === 'string' && v)
+  )];
+  initVersionFilter(versions);
+
   const filtered = applyFilters(files, currentFilters);
   lastFilteredRuns = filtered;
   currentRunPage   = 0;
@@ -2245,6 +2560,7 @@ async function init() {
   // Load asset data (relics + cards JSON) and favorites
   await Promise.all([
     loadAssetData(),
+    loadKernelsBundle(),
     window.electronAPI.getFavorites().then(favs => { favoritesSet = new Set(favs); }),
   ]);
 
@@ -2263,6 +2579,9 @@ async function init() {
   document.getElementById('refreshBtn').addEventListener('click', async () => {
     await loadAndRender();
     flashRefreshIndicator();
+  });
+  document.getElementById('devToolsBtn').addEventListener('click', () => {
+    window.electronAPI.openDevTools();
   });
   document.getElementById('changeFolderBtn').addEventListener('click', async () => {
     await window.electronAPI.navigateToSetup();
@@ -2506,6 +2825,7 @@ async function init() {
     currentFilters.searchTokens  = [];
     currentFilters.excludeTokens = [];
     currentFilters.ascLevels     = null;
+    currentFilters.versions      = null;
     currentFilters.favoritedOnly = false;
 
     // Reset UI controls
@@ -2529,6 +2849,11 @@ async function init() {
 
     // Ascension: check all
     document.getElementById('ascCheckboxList').querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = true;
+    });
+
+    // Version: check all
+    document.getElementById('versionCheckboxList').querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.checked = true;
     });
 
@@ -2714,10 +3039,51 @@ async function init() {
     await loadAndRender();
   });
 
-  // Close panel when clicking outside
+  // ── Version filter ──────────────────────────────────────────────────────
+  // Mirrors the Ascension filter wiring above; build_id is the run.build_id
+  // string ("v0.103.2" etc.) and `_versionAllValues` is the union of all
+  // build_ids present in the current run set.
+  document.getElementById('versionFilterWrap').addEventListener('click', (e) => e.stopPropagation());
+
+  document.getElementById('versionFilterBtn').addEventListener('click', () => {
+    const panel = document.getElementById('versionFilterPanel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  });
+
+  document.getElementById('versionCheckAll').addEventListener('click', async () => {
+    currentFilters.versions = null;
+    initVersionFilter(_versionAllValues);
+    await loadAndRender();
+  });
+
+  document.getElementById('versionUncheckAll').addEventListener('click', async () => {
+    currentFilters.versions = new Set();
+    initVersionFilter(_versionAllValues);
+    await loadAndRender();
+  });
+
+  document.getElementById('versionCheckboxList').addEventListener('change', async (e) => {
+    const cb = e.target.closest('.version-checkbox');
+    if (!cb) return;
+    const v = cb.dataset.version;
+    if (currentFilters.versions === null) {
+      currentFilters.versions = new Set(_versionAllValues);
+    }
+    if (cb.checked) currentFilters.versions.add(v);
+    else            currentFilters.versions.delete(v);
+    if (currentFilters.versions.size === _versionAllValues.length) {
+      currentFilters.versions = null;
+    }
+    updateVersionBtn();
+    await loadAndRender();
+  });
+
+  // Close panels when clicking outside
   document.addEventListener('click', () => {
-    const panel = document.getElementById('ascFilterPanel');
-    if (panel) panel.style.display = 'none';
+    const ascPanel = document.getElementById('ascFilterPanel');
+    if (ascPanel) ascPanel.style.display = 'none';
+    const verPanel = document.getElementById('versionFilterPanel');
+    if (verPanel) verPanel.style.display = 'none';
   });
 
   // ── Card / Relic search filter ──────────────────────────────────────────
@@ -2850,80 +3216,80 @@ async function markResourceUpdated() {
 
 // ── Update Resources overlay ─────────────────────────────────────────────────
 
-// ── Update progress system ────────────────────────────────────────────────────
+// ── Update progress system ──────────────────────────────────────────────────
 //
-// Heuristic item counts (intentional over-estimates so bar fills smoothly
-// and snaps to 100% when the section finishes, typical loading bar behaviour).
-const PARSE_HEURISTICS = { relics: 300, cards: 600, enchantments: 20, events: 70 };
-
-// Per-section progress ranges.  Each section has:
-//   header    – % when the ━━━ SECTION ━━━ line is seen
-//   parseStart/parseEnd – % range swept by per-item "item [N]" prints
-//   scraped   – % when "Scraped N / Total unique cards / Found N" is seen
-//   imgStart/imgEnd – % range swept by "[N/M]" image download prints
-// 0-9%: parallel wiki page fetch phase
-// 10-99%: section processing
-const SECTION_PROGRESS = {
-  relics:       { header: 10, parseStart: 10, parseEnd: 18, scraped: 18, imgStart: 18, imgEnd: 30 },
-  cards:        { header: 31, parseStart: 31, parseEnd: 46, scraped: 46, imgStart: 46, imgEnd: 72 },
-  enchantments: { header: 73, parseStart: 73, parseEnd: 76, scraped: 76, imgStart: 76, imgEnd: 79 },
-  events:       { header: 80, parseStart: 80, parseEnd: 85, scraped: 85, imgStart: 85, imgEnd: 88 },
-  map_icons:    { header: 89, parseStart: 89, parseEnd: 89, scraped: 89, imgStart: 89, imgEnd: 99 },
+// The new pipeline emits log lines tagged with bracketed phase names —
+// `[detect] …`, `[tools] …`, `[extract] …`, `[decompile] …`, `[parse] …`,
+// `[simplify] …`, `[cleanup] …`, `[sync] …`, `[ready] …`. Each phase
+// snaps the bar to a baseline percentage; phases with internal progress
+// (tool-download %, GDRE extract %) interpolate within their range so the
+// bar moves smoothly during long stages instead of jumping in chunks.
+//
+// Stage % budget calibrated for a typical re-run (tools cached). First-time
+// runs spend more wall-time on `tools` (downloads), so the bar will linger
+// in 2-30% during that phase — that's fine, the per-percent tick keeps it
+// moving.
+const PIPELINE_STAGES = {
+  detect:    { start:   1, end:   2 },
+  tools:     { start:   2, end:  25 },   // wide for first-run downloads
+  // extract + decompile run in parallel — both share the same progress
+  // range. GDRE's % drives the bar through this band; dnSpy's status
+  // doesn't move it (dnSpy is mostly silent and usually finishes first).
+  extract:   { start:  25, end:  65 },
+  decompile: { start:  25, end:  65 },
+  parse:     { start:  65, end:  68 },
+  simplify:  { start:  68, end:  70 },
+  relocate:  { start:  70, end:  72 },
+  sync:      { start:  72, end:  76 },   // GitHub fetch of kernels + map icons
+  render:    { start:  76, end:  96 },   // ~20s of canvas bakes
+  cleanup:   { start:  96, end:  98 },
+  ready:     { start: 100, end: 100 },
 };
 
-let _updateSection = 'relics';
-let _fetchedPages  = 0;
-
 function parseUpdateProgress(line, currentPct) {
-  // ── Script startup ─────────────────────────────────────────────────────
-  if (/Connecting to wiki/.test(line)) return Math.max(currentPct, 1);
-
-  // ── Parallel fetch phase ───────────────────────────────────────────────
-  if (/Fetching \d+ wiki page/.test(line)) return Math.max(currentPct, 2);
-  if (/✓ Fetched /.test(line)) {
-    _fetchedPages++;
-    return Math.max(currentPct, 2 + _fetchedPages * 2); // 4, 6, 8, (10 = relics header)
+  // Snap to the start of whichever stage just announced itself.
+  const stageMatch = line.match(/^\[(\w+)\]/);
+  if (stageMatch) {
+    const stage = PIPELINE_STAGES[stageMatch[1]];
+    if (stage) currentPct = Math.max(currentPct, stage.start);
   }
 
-  // ── Section header detection ────────────────────────────────────────────
-  if (/━━━ RELICS ━━━/.test(line))       { _updateSection = 'relics';       return Math.max(currentPct, SECTION_PROGRESS.relics.header); }
-  if (/━━━ CARDS ━━━/.test(line))        { _updateSection = 'cards';        return Math.max(currentPct, SECTION_PROGRESS.cards.header); }
-  if (/━━━ ENCHANTMENTS ━━━/.test(line)) { _updateSection = 'enchantments'; return Math.max(currentPct, SECTION_PROGRESS.enchantments.header); }
-  if (/━━━ EVENTS ━━━/.test(line))       { _updateSection = 'events';       return Math.max(currentPct, SECTION_PROGRESS.events.header); }
-  if (/━━━ MAP ICONS ━━━/.test(line))    { _updateSection = 'map_icons';    return Math.max(currentPct, SECTION_PROGRESS.map_icons.header); }
-
-  const sp = SECTION_PROGRESS[_updateSection];
-  if (!sp) return currentPct;
-
-  // ── Per-item parse progress: "item [N]" ───────────────────────────────
-  const itemM = line.match(/\bitem \[(\d+)\]/);
-  if (itemM) {
-    const n = parseInt(itemM[1]);
-    const heuristic = PARSE_HEURISTICS[_updateSection] || 1;
-    const ratio = Math.min(n / heuristic, 1.0);
-    return Math.max(currentPct, sp.parseStart + ratio * (sp.parseEnd - sp.parseStart));
+  // ── Per-stage interpolation ───────────────────────────────────────────
+  // Tool download % during the tools stage. The progress message is
+  // "[tools] Downloading <name>: 87%". We don't know whether GDRE (first
+  // of two) or dnSpy (second) is downloading — use a single combined
+  // bucket spanning the full tools range so the bar is monotonic.
+  const dl = line.match(/^\[tools\] Downloading.*?(\d+)%/);
+  if (dl) {
+    const pct = parseInt(dl[1], 10);
+    const s = PIPELINE_STAGES.tools;
+    return Math.max(currentPct, s.start + (pct / 100) * (s.end - s.start));
   }
 
-  // ── End of parse phase (JSON written) ─────────────────────────────────
-  if (/Scraped \d+|Total unique cards|Found \d+ (relic|card|event|icon)/.test(line)) {
-    return Math.max(currentPct, sp.scraped);
+  // GDRE prints its own progress bar: "Exporting resources... [██…] 87%".
+  // Map 0..100% within the line onto extract's range.
+  const gdre = line.match(/^\[extract\].*?(\d+)%/);
+  if (gdre) {
+    const pct = parseInt(gdre[1], 10);
+    const s = PIPELINE_STAGES.extract;
+    return Math.max(currentPct, s.start + (pct / 100) * (s.end - s.start));
   }
 
-  // ── Image download start ───────────────────────────────────────────────
-  if (/Images: downloading \d+|Downloading \d+ icon/.test(line)) return Math.max(currentPct, sp.imgStart);
-
-  // ── Per-image progress: "[N/M] ✓ filename" ────────────────────────────
-  const imgM = line.match(/\[(\d+)\/(\d+)\]/);
-  if (imgM) {
-    const ratio = parseInt(imgM[1]) / Math.max(parseInt(imgM[2]), 1);
-    return Math.max(currentPct, sp.imgStart + ratio * (sp.imgEnd - sp.imgStart));
+  // Render stage emits "[render] Baking cards 230/1170…". Map the per-card
+  // counter onto the render stage's percentage range so the overlay bar
+  // moves smoothly during what is the longest stretch in a clean run.
+  const render = line.match(/^\[render\].*?(\d+)\s*\/\s*(\d+)/);
+  if (render) {
+    const done = parseInt(render[1], 10);
+    const total = parseInt(render[2], 10);
+    if (total > 0) {
+      const s = PIPELINE_STAGES.render;
+      return Math.max(currentPct, s.start + (done / total) * (s.end - s.start));
+    }
   }
 
-  // ── Images done ────────────────────────────────────────────────────────
-  if (/Images done:/.test(line)) return Math.max(currentPct, sp.imgEnd);
-
-  // ── All done ───────────────────────────────────────────────────────────
-  if (/✓ Done\./.test(line)) return 100;
+  // Final ready-line jumps to 100.
+  if (/^\[ready\] Pipeline complete/.test(line)) return 100;
 
   return currentPct;
 }
@@ -2936,6 +3302,22 @@ function appendUpdateLog(log, text, isErr) {
   log.scrollTop = log.scrollHeight;
 }
 
+// In-place variant. If the previous entry was also marked `data-live`,
+// reuse it; otherwise add a fresh one and tag it. Lets noisy progress
+// (download percentages) tick in a single line.
+function updateLiveLog(log, text) {
+  const last = log.lastElementChild;
+  if (last && last.dataset && last.dataset.live === '1') {
+    last.textContent = text + '\n';
+  } else {
+    const span = document.createElement('span');
+    span.textContent = text + '\n';
+    span.dataset.live = '1';
+    log.appendChild(span);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
 function setUpdateProgress(pct) {
   const bar  = document.getElementById('updateProgressBar');
   const pctEl = document.getElementById('updateOverlayPct');
@@ -2945,9 +3327,6 @@ function setUpdateProgress(pct) {
 }
 
 async function runUpdateResources() {
-  // Reset progress state
-  _updateSection = 'relics';
-  _fetchedPages  = 0;
   let currentPct = 0;
 
   // Open overlay
@@ -2967,7 +3346,13 @@ async function runUpdateResources() {
   overlay.style.display = 'flex';
 
   window.electronAPI.onUpdateProgress(({ type, data }) => {
-    appendUpdateLog(log, data, type === 'stderr');
+    if (type === 'progress') {
+      // Live-update — collapse repeated progress lines (e.g. download %)
+      // onto one log entry instead of one per tick.
+      updateLiveLog(log, data);
+    } else {
+      appendUpdateLog(log, data, type === 'stderr');
+    }
     statusEl.textContent = data.length > 80 ? data.slice(0, 77) + '…' : data;
     const newPct = parseUpdateProgress(data, currentPct);
     if (newPct !== currentPct) {
@@ -3019,6 +3404,43 @@ document.getElementById('updateCloseBtn').addEventListener('click', () => {
 document.getElementById('updateResourcesBtn').addEventListener('click', () => {
   runUpdateResources();
 });
+
+// Pipeline render-stage hook. Main process triggers via
+// `pipeline-bake-cards-trigger`; we run the renderer-side bake to
+// completion and notify back with progress + final result. Errors are
+// returned to main, which logs and aborts the pipeline.
+if (window.electronAPI && window.electronAPI.onPipelineBakeTrigger) {
+  console.log('[render-stage] IPC listener registered, waiting for trigger');
+  window.electronAPI.onPipelineBakeTrigger(async () => {
+    console.log('[render-stage] trigger received, starting bake');
+    const t0 = Date.now();
+    // Immediately ack so the main-side stall guard knows the listener is
+    // alive. Without this, the first user-visible progress event doesn't
+    // fire until card bake starts (~15-20s in on first run, after shell
+    // bake completes), which can trip a short stall timeout.
+    window.electronAPI.notifyBakeProgress({ done: 0, total: 0, ack: true });
+    try {
+      const result = await window.cardRenderHelper.runPipelineBake((progress) => {
+        window.electronAPI.notifyBakeProgress(progress);
+      });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`[render-stage] complete in ${elapsed}s — baked ${result?.baked ?? 0} of ${result?.totalKeys ?? 0} keys`);
+      // If we baked nothing despite having keys to bake, surface it as an
+      // error so the pipeline overlay shows the failure instead of silently
+      // succeeding and then wiping portraits.
+      if (result && result.totalKeys > 0 && result.baked === 0) {
+        window.electronAPI.notifyBakeDone({
+          error: `bake produced 0 PNGs out of ${result.totalKeys} expected — check renderer console for [card_render] errors`,
+        });
+        return;
+      }
+      window.electronAPI.notifyBakeDone(result || { baked: 0, totalKeys: 0 });
+    } catch (e) {
+      console.error('[render-stage] bake threw:', e);
+      window.electronAPI.notifyBakeDone({ error: e.message || String(e) });
+    }
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DECK BUILD STEPPER
@@ -3357,18 +3779,26 @@ function stepperCardHtml(card, extraClass = '', labelHtml = '') {
   const enchData = enchId ? lookupEnchantmentData(enchId) : null;
   const enchName = enchData?.name || (enchId ? idToDisplayName(enchId) : null);
 
+  // Stepper card render — delegated to card_render_helper. data-build-id
+  // ties the render to the run's version so older saves get period-accurate
+  // stats via kernel composition. data-card-character pins Strike/Defend
+  // variants to the right character.
   let inner;
-  const msOverride = getMadScienceImageOverride(card);
-  if (data?.imageFile) {
-    let imgFile = upgraded && data.imageFileUpgraded ? data.imageFileUpgraded : data.imageFile;
-    if (msOverride) imgFile = upgraded ? msOverride.imageFileUpgraded : msOverride.imageFile;
-    inner = `<img src="appdata://images/card_images/${escHtml(imgFile)}" alt="${escHtml(data.name || name)}" loading="lazy" />`;
+  if (data?.name || name) {
+    const displayName = data?.name || name;
+    const buildAttr   = _activeBuildId ? ` data-build-id="${escHtml(_activeBuildId)}"` : '';
+    const charAttr    = data?.character ? ` data-card-character="${escHtml(data.character)}"` : '';
+    const rider       = tinkerRiderForCard(card);
+    const riderAttr   = rider != null ? ` data-tinker-rider="${rider}"` : '';
+    inner = `<img class="card-render-target" data-card-name="${escHtml(displayName)}"`
+          + ` data-upgraded="${upgraded ? 'true' : 'false'}"${charAttr}${buildAttr}${riderAttr}`
+          + ` src="${window.cardRenderHelper.PLACEHOLDER}" alt="${escHtml(displayName)}" loading="lazy" />`;
   } else {
     inner = `<div class="card-img-placeholder">${escHtml(name)}</div>`;
   }
 
   const enchIcon = enchName && enchData?.imageFile
-    ? `<button class="card-enchant-icon" data-enchant-id="${escHtml(enchId)}" title="${escHtml(enchName)}"><img src="appdata://images/enchantment_images/${escHtml(enchData.imageFile)}" alt="${escHtml(enchName)}" /></button>`
+    ? `<button class="card-enchant-icon" data-enchant-id="${escHtml(enchId)}" title="${escHtml(enchName)}"><img src="appdata://images/${escHtml(enchData.imageFile)}" alt="${escHtml(enchName)}" /></button>`
     : '';
 
   return `<div class="stepper-card-wrap ${escHtml(extraClass)}" title="${escHtml(name)}">${inner}${enchIcon}${labelHtml}</div>`;
@@ -3447,7 +3877,7 @@ function renderStepperStep(idx) {
       const name = idToDisplayName(pid);
       const data = lookupPotionData(pid);
       const inner = data?.imageFile
-        ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
+        ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(data.name || name)}" />`
         : escHtml(name);
       return `<span class="stepper-potion-chip" data-potion-id="${escHtml(pid)}" title="${escHtml(name)}" style="cursor:pointer;">${inner}</span>`;
     }).join('');
@@ -3524,7 +3954,7 @@ function renderStepperStep(idx) {
       const data = lookupRelicData(id);
       const bought = rc.was_picked;
       const imgHtml = data?.imageFile
-        ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
         : `<div class="relic-icon-placeholder" style="width:36px;height:36px;font-size:0.6em;">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
       return `<div class="stepper-shop-relic${bought ? ' bought' : ''}" data-relic-id="${escHtml(id)}" title="${escHtml(name)}">
         ${imgHtml}
@@ -3546,7 +3976,7 @@ function renderStepperStep(idx) {
       const data = lookupPotionData(id);
       const bought = pc.was_picked;
       const inner = data?.imageFile
-        ? `<img src="appdata://images/potion_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
         : escHtml(name);
       return `<div class="stepper-shop-potion${bought ? ' bought' : ''}" data-potion-id="${escHtml(id)}" title="${escHtml(name)}">
         ${inner}
@@ -3793,7 +4223,7 @@ function renderStepperStep(idx) {
       const data = lookupRelicData(id);
       const isNew = newFloors.has(id);
       const imgHtml = data?.imageFile
-        ? `<img src="appdata://images/relic_images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
+        ? `<img src="appdata://images/${escHtml(data.imageFile)}" alt="${escHtml(name)}" />`
         : `<div class="relic-icon-placeholder" style="width:24px;height:24px;font-size:0.6em;">${escHtml(name.slice(0, 2).toUpperCase())}</div>`;
       return `<span class="stepper-relic-chip${isNew ? ' new-relic' : ''}" data-relic-id="${escHtml(id)}" title="${escHtml(name)}" style="cursor:pointer;">${imgHtml}</span>`;
     }).join('');

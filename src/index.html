@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' appdata:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' appdata: data:;" />
+        content="default-src 'self' appdata: extracted: cardassets:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' appdata: extracted: cardassets: data: blob:; font-src 'self' appdata: extracted: cardassets: data:;" />
   <title>STS2 Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
@@ -147,10 +147,11 @@
     .runs-table .col-asc    { width: 50px; text-align: center; }
     .runs-table .col-result { width: 90px; }
     .runs-table .col-date   { width: 120px; }
-    .runs-table .col-death  { }
-    .runs-table .col-dur    { width: 80px; text-align: right; }
-    .runs-table .col-counts { width: 80px; text-align: right; }
-    .runs-table .col-arrow  { width: 24px; text-align: center; color: var(--text-muted); }
+    .runs-table .col-death   { }
+    .runs-table .col-version { width: 80px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 0.85rem; }
+    .runs-table .col-dur     { width: 80px; text-align: right; }
+    .runs-table .col-counts  { width: 56px; text-align: right; }
+    .runs-table .col-arrow   { width: 24px; text-align: center; color: var(--text-muted); }
     td.col-asc { text-align: center; }
 
     .run-char  { font-weight: 600; color: var(--text-primary); }
@@ -386,6 +387,7 @@
     .detail-stat-value.outcome-win       { color: var(--green); }
     .detail-stat-value.outcome-loss      { color: #e74c3c; }
     .detail-stat-value.outcome-abandoned { color: var(--text-muted); }
+    .detail-stat-value.recon-active      { color: var(--gold-light); }
 
     /* ── HP Journey Graph ───────────────────────────────────────────────── */
     .hp-graph-wrap {
@@ -1284,6 +1286,8 @@
                      margin-top:3px; font-size:0.65rem; color:var(--text-muted); white-space:nowrap;"></span>
       </div>
       <button class="btn btn-secondary" id="refreshBtn">↻ Refresh</button>
+      <button class="btn btn-secondary" id="devToolsBtn"
+              title="Open Chromium DevTools (detached). Useful for inspecting card render hydration, kernel composer state, network calls, console logs.">🛠 DevTools</button>
       <button class="btn btn-secondary" id="changeFolderBtn">Change Folder</button>
       <button class="help-btn" id="helpBtn" title="Help">?</button>
     </div>
@@ -1366,6 +1370,22 @@
               <button class="asc-ctrl-btn" id="ascUncheckAll">Uncheck All</button>
             </div>
             <div class="asc-checkbox-list" id="ascCheckboxList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group" style="min-width:auto;">
+        <label class="filter-label">Version</label>
+        <div class="asc-filter-wrap" id="versionFilterWrap">
+          <button class="asc-filter-btn" id="versionFilterBtn">All</button>
+          <div class="asc-filter-panel" id="versionFilterPanel" style="display:none;">
+            <div class="asc-filter-ctrl">
+              <button class="asc-ctrl-btn" id="versionCheckAll">Check All</button>
+              <button class="asc-ctrl-btn" id="versionUncheckAll">Uncheck All</button>
+            </div>
+            <div class="asc-checkbox-list" id="versionCheckboxList"></div>
           </div>
         </div>
       </div>
@@ -1911,6 +1931,12 @@
     </div>
   </div>
 
+  <!-- Card-render stack. Order matters: renderer.js publishes
+       window.cardRender; kernel_composer publishes window.kernelComposer;
+       card_render_helper.js bridges both into the dashboard's UI. -->
+  <script src="../scripts/render/renderer.js"></script>
+  <script src="../scripts/kernel_composer.js"></script>
+  <script src="card_render_helper.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

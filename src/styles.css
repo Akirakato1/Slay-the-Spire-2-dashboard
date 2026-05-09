@@ -1,3 +1,43 @@
+/* ── Description markup colors ──────────────────────────────────────────── */
+/* Used by popups (relic / event / potion / enchantment) to render the same
+   `[gold]…[/gold]` markup the canvas card renderer parses. Inline icons
+   are sized to match adjacent text so they sit on the line cleanly. */
+.md-gold   { color: #ffe150; }
+.md-green  { color: #7fff00; }
+.md-purple { color: #be78e6; }
+.md-blue   { color: #5dade2; }
+.md-red    { color: #ff6b6b; }
+.md-orange { color: #ff9933; }
+.md-aqua   { color: #4ddbe6; }
+.md-icon {
+  width: 1em; height: 1em;
+  vertical-align: -0.15em;
+  margin: 0 1px;
+  display: inline-block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* ── Game fonts (extracted from PCK by the local-extraction pipeline) ────── */
+/* These declarations expose the in-game Kreon font to the canvas-2D card
+   renderer. `appdata://fonts/...` resolves to `<userData>/Tools/extraction/
+   raw/fonts/...` via main.js's protocol handler. font-display: block keeps
+   the canvas waiting for the real face rather than substituting a fallback. */
+@font-face {
+  font-family: 'STS Card Name';
+  src: url('appdata://fonts/kreon_bold.ttf') format('truetype');
+  font-weight: 700; font-display: block;
+}
+@font-face {
+  font-family: 'Kreon';
+  src: url('appdata://fonts/kreon_regular.ttf') format('truetype');
+  font-weight: 400; font-display: block;
+}
+@font-face {
+  font-family: 'Kreon';
+  src: url('appdata://fonts/kreon_bold.ttf') format('truetype');
+  font-weight: 700; font-display: block;
+}
+
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
