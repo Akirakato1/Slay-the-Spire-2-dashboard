@@ -1,7 +1,7 @@
 {
-  "name": "sts2-stats",
-  "version": "1.0.0",
-  "description": "Slay the Spire 2 Run Statistics Dashboard",
+  "name": "sts2-dashboard",
+  "version": "1.0.3",
+  "description": "Slay the Spire 2 Run Dashboard",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -16,10 +16,21 @@
   },
   "build": {
     "appId": "com.sts2stats.app",
-    "productName": "STS2 Stats",
+    "productName": "STS2 Dashboard",
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "src/**/*",
+      "scripts/**/*",
+      "card render assets/**/*",
+      "STS2S.ico",
+      "Slay_the_Spire_2_icon.webp",
+      "ATTRIBUTIONS.md",
+      "CHANGELOG.md",
+      "README.md",
+      "package.json"
+    ],
     "win": {
       "target": "portable",
       "icon": "STS2S.ico"

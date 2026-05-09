@@ -1,0 +1,170 @@
+{
+  "scraped_at": "2026-05-09T06:06:12.771Z",
+  "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Patch_Notes",
+  "current_version": "v0.105.1",
+  "versions": [
+    {
+      "version": "v0.98.1",
+      "released_on": "2026-03-05",
+      "summary": "2026-03-05 (Hotfix v0.98.1)"
+    },
+    {
+      "version": "v0.98.2",
+      "released_on": "2026-03-06",
+      "summary": "2026-03-06 (Hotfix v0.98.2)"
+    },
+    {
+      "version": "v0.98.3",
+      "released_on": "2026-03-10",
+      "summary": "2026-03-10 (Hotfix v0.98.3)"
+    },
+    {
+      "version": "v0.99",
+      "released_on": "2026-03-12",
+      "summary": "2026-03-12 (Beta v.0.99)"
+    },
+    {
+      "version": "v0.99.1",
+      "released_on": "2026-03-17",
+      "summary": "2026-03-17 (v.0.99.1)"
+    },
+    {
+      "version": "v0.100.0",
+      "released_on": "2026-03-19",
+      "summary": "2026-03-19 (Beta v.0.100.0)"
+    },
+    {
+      "version": "v0.101.0",
+      "released_on": "2026-03-26",
+      "summary": "2026-03-26 (Beta v.0.101.0)"
+    },
+    {
+      "version": "v0.102.0",
+      "released_on": "2026-04-02",
+      "summary": "2026-04-02 (Beta v.0.102.0)"
+    },
+    {
+      "version": "v0.103.0",
+      "released_on": "2026-04-09",
+      "summary": "2026-04-09 (Beta v.0.103.0)"
+    },
+    {
+      "version": "v0.103.1",
+      "released_on": "2026-04-15",
+      "summary": "2026-04-15 (Beta Hotfix v.0.103.1)[1]"
+    },
+    {
+      "version": "v0.103.2",
+      "released_on": "2026-04-16",
+      "summary": "2026-04-16 (Major Update #1 - v.0.103.2)"
+    },
+    {
+      "version": "v0.104.0",
+      "released_on": "2026-04-23",
+      "summary": "2026-04-23 (Beta v.0.104.0)"
+    },
+    {
+      "version": "v0.105.0",
+      "released_on": "2026-05-07",
+      "summary": "2026-05-07 (Beta v.0.105.0)"
+    },
+    {
+      "version": "v0.105.1",
+      "released_on": "2026-05-08",
+      "summary": "2026-05-08 (Beta Hotfix v.0.105.1)"
+    }
+  ],
+  "kernel_notes": [
+    {
+      "index": 0,
+      "from": "v0.98.2",
+      "to": "v0.98.1",
+      "file": "kernel-notes/0. v0.98.2_to_v0.98.1.json",
+      "released_on": "2026-03-06"
+    },
+    {
+      "index": 1,
+      "from": "v0.98.3",
+      "to": "v0.98.2",
+      "file": "kernel-notes/1. v0.98.3_to_v0.98.2.json",
+      "released_on": "2026-03-10"
+    },
+    {
+      "index": 2,
+      "from": "v0.99",
+      "to": "v0.98.3",
+      "file": "kernel-notes/2. v0.99_to_v0.98.3.json",
+      "released_on": "2026-03-12"
+    },
+    {
+      "index": 3,
+      "from": "v0.99.1",
+      "to": "v0.99",
+      "file": "kernel-notes/3. v0.99.1_to_v0.99.json",
+      "released_on": "2026-03-17"
+    },
+    {
+      "index": 4,
+      "from": "v0.100.0",
+      "to": "v0.99.1",
+      "file": "kernel-notes/4. v0.100.0_to_v0.99.1.json",
+      "released_on": "2026-03-19"
+    },
+    {
+      "index": 5,
+      "from": "v0.101.0",
+      "to": "v0.100.0",
+      "file": "kernel-notes/5. v0.101.0_to_v0.100.0.json",
+      "released_on": "2026-03-26"
+    },
+    {
+      "index": 6,
+      "from": "v0.102.0",
+      "to": "v0.101.0",
+      "file": "kernel-notes/6. v0.102.0_to_v0.101.0.json",
+      "released_on": "2026-04-02"
+    },
+    {
+      "index": 7,
+      "from": "v0.103.0",
+      "to": "v0.102.0",
+      "file": "kernel-notes/7. v0.103.0_to_v0.102.0.json",
+      "released_on": "2026-04-09"
+    },
+    {
+      "index": 8,
+      "from": "v0.103.1",
+      "to": "v0.103.0",
+      "file": "kernel-notes/8. v0.103.1_to_v0.103.0.json",
+      "released_on": "2026-04-15"
+    },
+    {
+      "index": 9,
+      "from": "v0.103.2",
+      "to": "v0.103.1",
+      "file": "kernel-notes/9. v0.103.2_to_v0.103.1.json",
+      "released_on": "2026-04-16"
+    },
+    {
+      "index": 10,
+      "from": "v0.104.0",
+      "to": "v0.103.2",
+      "file": "kernel-notes/10. v0.104.0_to_v0.103.2.json",
+      "released_on": "2026-04-23"
+    },
+    {
+      "index": 11,
+      "from": "v0.105.0",
+      "to": "v0.104.0",
+      "file": "kernel-notes/11. v0.105.0_to_v0.104.0.json",
+      "released_on": "2026-05-07"
+    },
+    {
+      "index": 12,
+      "from": "v0.105.1",
+      "to": "v0.105.0",
+      "file": "kernel-notes/12. v0.105.1_to_v0.105.0.json",
+      "released_on": "2026-05-08"
+    }
+  ]
+}

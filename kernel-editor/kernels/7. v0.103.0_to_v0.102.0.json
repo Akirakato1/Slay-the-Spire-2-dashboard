@@ -1,0 +1,56 @@
+{
+  "from": "v0.103.0",
+  "to": "v0.102.0",
+  "released_on": "2026-04-09",
+  "summary": "2026-04-09 (Beta v.0.103.0)",
+  "cards": {
+    "Colossus": {
+      "rarity": {
+        "old": "Rare",
+        "new": "Uncommon"
+      }
+    },
+    "Acrobatics": {
+      "rarity": {
+        "old": "Common",
+        "new": "Uncommon"
+      }
+    },
+    "Follow Through": {
+      "rarity": {
+        "old": "Uncommon",
+        "new": "Common"
+      },
+      "description": {
+        "old": "Deal 6 damage to [gold]ALL [/gold]enemies. If the last card you played this turn was a [gold]Skill[/gold], apply 1 [gold]Weak [/gold]to [gold]ALL [/gold]enemies.",
+        "new": "Deal 7 damage. If you have 5 or more other cards in your [gold]Hand[/gold], hits an additional time."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 8 damage to [gold]ALL [/gold]enemies. If the last card you played this turn was a [gold]Skill[/gold], apply 2 [gold]Weak [/gold]to [gold]ALL [/gold]enemies.",
+        "new": "Deal 9 damage. If you have 5 or more other cards in your [gold]Hand[/gold], hits an additional time."
+      }
+    },
+    "Memento Mori": {
+      "description": {
+        "old": "Deal 8 damage. Deals 4 additional damage for each card discarded this turn.",
+        "new": "Deal 9 damage. Deals 4 additional damage for each card discarded this turn."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 10 damage. Deals 4 additional damage for each card discarded this turn.",
+        "new": "Deal 11 damage. Deals 4 additional damage for each card discarded this turn."
+      }
+    },
+    "Speedster": {
+      "description": {
+        "old": "Whenever you draw a card during your turn, deal 1 damage to ALL enemies.",
+        "new": "Whenever you draw a card during your turn, deal 2 damage to ALL enemies."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you draw a card during your turn, deal 2 damage to ALL enemies.",
+        "new": "[gold]Innate\\n[/gold]. Whenever you draw a card during your turn, deal 2 damage to ALL enemies."
+      }
+    }
+  },
+  "relics": {},
+  "enchantments": {}
+}

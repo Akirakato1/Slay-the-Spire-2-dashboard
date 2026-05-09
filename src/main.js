@@ -436,47 +436,46 @@ ipcMain.handle('tools-install', async (_event, name) => {
 // composes them at run-render time to reconstruct period-accurate stats for
 // saves on older builds. Phase 3 will add a runtime sync from GitHub raw.
 
-const bundledDataDir   = path.join(__dirname, '..', 'data');
-const bundledKernelDir = path.join(bundledDataDir, 'kernels');
-
-// Remote-fetched kernels cache. Lives in writable user appdata (the bundled
-// dir is read-only after install). Combined with the bundled set at load
-// time, deduped by filename — remote wins on conflict (it's newer by
-// construction since we only fetch when remote manifest is ahead).
-const remoteKernelDir  = path.join(appdataBase, 'kernels-remote');
+// All kernel data is fetched from the GitHub repo at runtime — nothing
+// bundled. The fetch lands in writable user appdata so subsequent launches
+// can render saves offline against the last-fetched copy.
+const remoteKernelDir = path.join(appdataBase, 'kernels-remote');
+const remoteManifest  = path.join(appdataBase, 'manifest.json');
 try { fs.mkdirSync(remoteKernelDir, { recursive: true }); } catch (_) {}
 
-// GitHub repo coordinates for kernel auto-sync. Finalized kernels live in
-// the repo at top-level `version_kernels/`; manifest sits next to them.
+// GitHub repo coordinates for kernel + manifest auto-sync. Both sit under
+// kernel-editor/ in the dashboard repo (Release Version/kernel-editor/);
+// the public-facing GitHub paths include the `Release Version/` prefix.
 const KERNELS_REPO_OWNER  = 'Akirakato1';
 const KERNELS_REPO_NAME   = 'Slay-the-Spire-2-dashboard';
 const KERNELS_REPO_BRANCH = 'main';
+// The repo layout on GitHub is flat: kernel-editor/, card render assets/,
+// src/, scripts/ etc. all live at the repo root (no Release Version/
+// wrapper, even though local working dirs may have one).
+const KERNEL_EDITOR_PATH  = 'kernel-editor';
 const KERNELS_RAW_BASE    =
-  `https://raw.githubusercontent.com/${KERNELS_REPO_OWNER}/${KERNELS_REPO_NAME}/${KERNELS_REPO_BRANCH}/version_kernels`;
+  `https://raw.githubusercontent.com/${KERNELS_REPO_OWNER}/${KERNELS_REPO_NAME}/${KERNELS_REPO_BRANCH}/${KERNEL_EDITOR_PATH}/kernels`;
+const MANIFEST_RAW_URL    =
+  `https://raw.githubusercontent.com/${KERNELS_REPO_OWNER}/${KERNELS_REPO_NAME}/${KERNELS_REPO_BRANCH}/${KERNEL_EDITOR_PATH}/manifest.json`;
 
 ipcMain.handle('get-kernels-bundle', () => {
   try {
-    const manifestPath = path.join(bundledDataDir, 'manifest.json');
-    const manifest = fs.existsSync(manifestPath)
-      ? JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    // Manifest comes from the GitHub-synced cache (written during the
+    // pipeline's [sync] stage). No bundled fallback — first-run pipeline
+    // is expected to have internet (we already download GDRE + dnSpy).
+    const manifest = fs.existsSync(remoteManifest)
+      ? JSON.parse(fs.readFileSync(remoteManifest, 'utf8'))
       : null;
 
-    // Finalized kernels live in data/kernels/ (bundled with app) — scanned
-    // directly. Plus any newer kernels fetched from the GitHub repo since
-    // last launch live in remoteKernelDir; remote wins on filename conflict.
-    // Kernel-notes (data/kernel-notes/) are auto-generated scaffolds and
-    // intentionally NOT loaded here; runtime composes only from finalized.
+    // Finalized kernels live in remoteKernelDir (synced from GitHub).
     const kernels = {};
-    const loadDir = (dir) => {
-      if (!fs.existsSync(dir)) return;
-      for (const f of fs.readdirSync(dir)) {
+    if (fs.existsSync(remoteKernelDir)) {
+      for (const f of fs.readdirSync(remoteKernelDir)) {
         if (!f.endsWith('.json')) continue;
-        try { kernels[`kernels/${f}`] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); }
+        try { kernels[`kernels/${f}`] = JSON.parse(fs.readFileSync(path.join(remoteKernelDir, f), 'utf8')); }
         catch (e) { console.warn(`Failed to parse kernel ${f}:`, e.message); }
       }
-    };
-    loadDir(bundledKernelDir);
-    loadDir(remoteKernelDir);     // overrides on conflict
+    }
     return { manifest, kernels };
   } catch (e) {
     console.warn('get-kernels-bundle failed:', e);
@@ -577,9 +576,23 @@ async function syncKernelsFromRemote() {
     // The repo lists kernels via the GitHub Contents API (no manifest needed).
     // Each entry's `download_url` points straight at the raw .json blob.
     const apiUrl = `https://api.github.com/repos/${KERNELS_REPO_OWNER}/${KERNELS_REPO_NAME}`
-                 + `/contents/version_kernels?ref=${KERNELS_REPO_BRANCH}`;
+                 + `/contents/${KERNEL_EDITOR_PATH}/kernels?ref=${KERNELS_REPO_BRANCH}`;
     const listing = await _fetchJson(apiUrl);
     if (!Array.isArray(listing)) return { ok: false, error: 'unexpected GitHub Contents response' };
+
+    // Fetch the manifest separately. The dashboard reads it at runtime as
+    // its chronological version index for disk-PNG resolution; without
+    // this, get-kernels-bundle returns null and versioned PNGs can't
+    // resolve. Best-effort — if it fails the rest of the sync still runs.
+    let manifestFetched = false;
+    try {
+      const body = await _fetchText(MANIFEST_RAW_URL);
+      const parsed = JSON.parse(body);
+      fs.writeFileSync(remoteManifest, JSON.stringify(parsed, null, 2), 'utf8');
+      manifestFetched = true;
+    } catch (e) {
+      console.warn('manifest sync: failed —', e.message);
+    }
 
     let downloaded = 0, skipped = 0, failed = 0;
     for (const entry of listing) {
@@ -613,8 +626,8 @@ async function syncKernelsFromRemote() {
         console.warn(`kernel sync: skipped ${filename} — ${e.message}`);
       }
     }
-    console.log(`kernel sync: ${downloaded} new, ${skipped} unchanged, ${failed} failed.`);
-    return { ok: true, downloaded, skipped, failed };
+    console.log(`kernel sync: ${downloaded} new, ${skipped} unchanged, ${failed} failed${manifestFetched ? '; manifest fetched' : '; manifest not fetched'}.`);
+    return { ok: true, downloaded, skipped, failed, manifestFetched };
   } catch (e) {
     console.warn('kernel sync: failed —', e.message);
     return { ok: false, error: e.message };
@@ -967,6 +980,19 @@ async function runPipeline({ force = false } = {}) {
     return { success: false, error: msg };
   }
   logPhase('detect', `Found STS2 ${steam.install.version} at ${steam.install.installDir}`);
+  // Persist the detected game version so external tools (kernel-editor's
+  // snapshot script) can label the basis correctly. The wiki's manifest
+  // current_version may be ahead of what's actually installed, so we
+  // record what was just extracted.
+  try {
+    fs.mkdirSync(settingsDir, { recursive: true });
+    const meta = fs.existsSync(resourceMetaPath)
+      ? JSON.parse(fs.readFileSync(resourceMetaPath, 'utf8'))
+      : {};
+    meta.gameVersion = steam.install.version;
+    meta.detectedAt  = new Date().toISOString();
+    fs.writeFileSync(resourceMetaPath, JSON.stringify(meta, null, 2), 'utf8');
+  } catch (e) { console.warn('save gameVersion to resource_meta failed:', e.message); }
   stageDone('detect', t0);
 
   // 2. Install tools if missing (graceful — skip when already cached).

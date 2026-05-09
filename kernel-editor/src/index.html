@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+  <title>Kernel Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header>
+  <select id="file-picker" title="Pick a kernel note to edit"></select>
+  <span class="meta" id="meta">—</span>
+  <span class="grow"></span>
+
+  <!-- Markup toolbar — applies the appropriate wrap/insert to whatever
+       text is currently selected in the focused input. mousedown is
+       preventDefault'd so clicking a button doesn't blur the input. -->
+  <div class="markup-toolbar" id="markup-toolbar">
+    <button data-wrap="gold"   title="Wrap selection in [gold]…[/gold]">[gold]</button>
+    <button data-wrap="green"  title="Wrap selection in [green]…[/green]">[green]</button>
+    <button data-wrap="purple" title="Wrap selection in [purple]…[/purple]">[purple]</button>
+    <button data-icon="energy" title="Insert [energy:N] (N = selected digits, or 1)">[energy:N]</button>
+    <button data-icon="star"   title="Insert [star:N] (N = selected digits, or 1)">[star:N]</button>
+  </div>
+
+  <button id="save-btn" class="primary">Save kernel</button>
+  <button id="finalize-btn" class="primary" title="Save and strip any row where old or new is blank">Finalize kernel</button>
+  <span id="status">ready</span>
+</header>
+
+<main>
+
+  <section class="pane builder">
+    <h2>Kernel Builder
+      <span class="pane-hint">Save = keep half-filled rows (work-in-progress). Finalize = strict (drops any row missing old or new).</span>
+    </h2>
+
+    <div class="header-fields">
+      <label>from <input id="hdr-from" readonly /></label>
+      <label>to <input id="hdr-to" readonly /></label>
+      <label>released_on <input id="hdr-date" readonly /></label>
+      <label class="grow">summary <input id="hdr-summary" /></label>
+    </div>
+
+    <div class="cat-stack">
+      <div class="cat" data-cat="cards">
+        <div class="cat-head"><span>Cards</span><button data-add="cards">+ Add card</button></div>
+        <div class="entries" id="entries-cards"></div>
+      </div>
+      <div class="cat" data-cat="relics">
+        <div class="cat-head"><span>Relics</span><button data-add="relics">+ Add relic</button></div>
+        <div class="entries" id="entries-relics"></div>
+      </div>
+      <div class="cat" data-cat="enchantments">
+        <div class="cat-head"><span>Enchantments</span><button data-add="enchantments">+ Add enchantment</button></div>
+        <div class="entries" id="entries-enchantments"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pane right-stack">
+    <div class="sub-pane notes">
+      <h2>Kernel Notes
+        <span class="pane-hint">Auto-extracted source from the wiki. Read-only.</span>
+      </h2>
+      <div class="notes-list" id="notes-list"></div>
+    </div>
+
+    <div class="sub-pane lookup">
+      <h2>Current-Patch Lookup
+        <span class="pane-hint" id="lookup-source">searching simplified data…</span>
+      </h2>
+      <div class="lookup-controls">
+        <input id="lookup-input" type="search" placeholder="Search card / relic / enchantment by name…" />
+      </div>
+      <div class="lookup-results" id="lookup-results"></div>
+    </div>
+  </section>
+
+</main>
+
+<script src="renderer.js"></script>
+</body>
+</html>

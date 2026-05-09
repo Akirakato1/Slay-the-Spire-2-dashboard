@@ -1,0 +1,99 @@
+{
+  "from": "v0.105.0",
+  "to": "v0.104.0",
+  "released_on": "2026-05-07",
+  "summary": "2026-05-07 (Beta v.0.105.0)",
+  "cards": {
+    "Sword Sage": {
+      "description": {
+        "old": "[gold]Sovereign Blade[/gold] now hits an additional time.",
+        "new": "[gold]Sovereign Blade[/gold] gains Replay 1."
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Sovereign Blade[/gold] now hits an additional time.",
+        "new": "[gold]Sovereign Blade[/gold] gains Replay 1."
+      }
+    },
+    "Bulwark": {
+      "description": {
+        "old": "Gain 13 [gold]Block[/gold].[gold]Forge[/gold] 10.",
+        "new": "Gain 12 [gold]Block[/gold].[gold]Forge[/gold] 10."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 16 [gold]Block[/gold].[gold]Forge[/gold] 13.",
+        "new": "Gain 15 [gold]Block[/gold].[gold]Forge[/gold] 13."
+      }
+    },
+    "Crescent Spear": {
+      "description": {
+        "old": "Deal 6 damage.Deals 2 additional damage for ALL your cards that have a [star:1] cost.",
+        "new": "Deal 8 damage.Deals 2 additional damage for ALL your cards that have a [star:1] cost."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 6 damage.Deals 3 additional damage for ALL your cards that have a [star:1] cost.",
+        "new": "Deal 8 damage.Deals 3 additional damage for ALL your cards that have a [star:1] cost."
+      }
+    },
+    "Patter": {
+      "description": {
+        "old": "Gain 9 [gold]Block[/gold].Gain 2 [gold]Vigor[/gold].",
+        "new": "Gain 8 [gold]Block[/gold].Gain 2 [gold]Vigor[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 11 [gold]Block[/gold].Gain 3 [gold]Vigor[/gold].",
+        "new": "Gain 10 [gold]Block[/gold].Gain 3 [gold]Vigor[/gold]."
+      }
+    },
+    "Royalties": {
+      "descriptionUpgraded": {
+        "old": "At the end of combat, gain 35 [gold]Gold[/gold].",
+        "new": "At the end of combat, gain 40 [gold]Gold[/gold]."
+      }
+    },
+    "Hyperbeam": {
+      "description": {
+        "old": "Deal 26 damage to ALL enemies.Lose 3 [gold]Focus[/gold].",
+        "new": "Deal 28 damage to ALL enemies.Lose 3 [gold]Focus[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 34 damage to ALL enemies.Lose 3 [gold]Focus[/gold].",
+        "new": "Deal 36 damage to ALL enemies.Lose 3 [gold]Focus[/gold]."
+      }
+    },
+    "Shatter": {
+      "description": {
+        "old": "Deal 11 damage to ALL enemies.[gold]Evoke[/gold] all of your Orbs.",
+        "new": "Deal 11 damage to ALL enemies.[gold]Evoke[/gold] all of your Orbs twice."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 15 damage to ALL enemies.[gold]Evoke[/gold] all of your Orbs.",
+        "new": "Deal 15 damage to ALL enemies.[gold]Evoke[/gold] all of your Orbs twice."
+      }
+    },
+    "Tesla Coil": {
+      "descriptionUpgraded": {
+        "old": "Deal 6 damage.Trigger all [gold]Lightning[/gold] against the enemy.",
+        "new": "Deal 4 damage.Trigger all [gold]Lightning[/gold] against the enemy twice."
+      }
+    },
+    "Uproar": {
+      "description": {
+        "old": "Deal 5 damage twice.Play a random Attack from your [gold]Draw Pile[/gold].",
+        "new": "Deal 6 damage twice.Play a random Attack from your [gold]Draw Pile[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 7 damage twice.Play a random Attack from your [gold]Draw Pile[/gold].",
+        "new": "Deal 8 damage twice.Play a random Attack from your [gold]Draw Pile[/gold]."
+      }
+    }
+  },
+  "relics": {
+    "Infused Core": {
+      "description": {
+        "old": "At the start of each combat, [gold]Channel[/gold] [blue]3[/blue] [gold]Lightning[/gold].",
+        "new": "At the start of each combat, [gold]Channel[/gold] [blue]3[/blue] [gold]Lightning[/gold]. Lightning Orbs deal 1 additional damage."
+      }
+    }
+  },
+  "enchantments": {}
+}

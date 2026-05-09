@@ -1,0 +1,15 @@
+{
+  "name": "kernel-editor",
+  "version": "0.1.0",
+  "description": "Side-by-side editor for STS2 dashboard kernel notes → finalized kernels.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node scripts/parse_patch_notes.js && electron .",
+    "parse-notes": "node scripts/parse_patch_notes.js",
+    "start:no-fetch": "electron .",
+    "snapshot": "node scripts/snapshot_basis.js"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  }
+}

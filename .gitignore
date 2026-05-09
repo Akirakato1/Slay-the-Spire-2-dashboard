@@ -1,0 +1,17 @@
+# Build / dependencies
+node_modules/
+dist/
+
+# Auto-generated kernel-editor artifacts (per-developer, regenerated on demand)
+kernel-editor/basis/
+kernel-editor/kernel-notes/
+kernel-editor/node_modules/
+
+# Secret config (Gemini API key)
+kernel-editor/llm-config.json
+
+# Editor / OS
+.vscode/
+*.log
+.DS_Store
+Thumbs.db

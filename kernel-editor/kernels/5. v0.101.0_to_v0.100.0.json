@@ -1,0 +1,205 @@
+{
+  "from": "v0.101.0",
+  "to": "v0.100.0",
+  "released_on": "2026-03-26",
+  "summary": "2026-03-26 (Beta v.0.101.0)",
+  "cards": {
+    "Capture Spirit": {
+      "description": {
+        "old": "Enemy loses 2 HP. \\nAdd 2 [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Enemy loses 3 HP. \\nAdd 3 [gold]Souls[/gold] into your [gold]Draw Pile[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Enemy loses 3 HP. \\nAdd 3 [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Enemy loses 4 HP. \\nAdd 4 [gold]Souls[/gold] into your [gold]Draw Pile[/gold]."
+      }
+    },
+    "Borrowed Time": {
+      "description": {
+        "old": "Apply 6 [purple]Doom [/purple]to yourself. Gain [energy:1].",
+        "new": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:1]"
+      },
+      "descriptionUpgraded": {
+        "old": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:1]",
+        "new": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:2]"
+      }
+    },
+    "Arsenal": {
+      "description": {
+        "old": "Whenever you play a Colorless card, gain 1 [gold]Strength[/gold].",
+        "new": "Whenever you create a card, gain 1 [gold]Strength[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you play a Colorless card, gain 2 [gold]Strength[/gold].",
+        "new": "[gold]Innate.[/gold] Whenever you create a card, gain 1 [gold]Strength[/gold]."
+      }
+    },
+    "Cinder": {
+      "description": {
+        "old": "Deal 18 damage. [gold]Exhaust[/gold] top card of the [gold]Draw Pile[/gold].",
+        "new": "Deal 18 damage. [gold]Exhaust[/gold] 1 card at random."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 24 damage. [gold]Exhaust[/gold] top card of the [gold]Draw Pile[/gold].",
+        "new": "Deal 24 damage. [gold]Exhaust[/gold] 1 card at random."
+      }
+    },
+    "Tremble": {
+      "description": {
+        "old": "Apply 3 [gold]Vulnerable[/gold].",
+        "new": "Apply 3 [gold]Vulnerable[/gold]. \\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Apply 4 [gold]Vulnerable[/gold].",
+        "new": "Apply 4 [gold]Vulnerable[/gold]. \\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Serpent Form": {
+      "descriptionUpgraded": {
+        "old": "Whenever you play a card, deal 5 damage to a random enemy.",
+        "new": "Whenever you play a card, deal 6 damage to a random enemy."
+      }
+    },
+    "Falling Star": {
+      "description": {
+        "old": "Deal 7 damage.\\nApply 1 [gold]Weak[/gold].\\nApply 1 [gold]Vulnerable[/gold].",
+        "new": "Deal 8 damage.\\nApply 1 [gold]Weak[/gold].\\nApply 1 [gold]Vulnerable[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 11 damage.\\nApply 1 [gold]Weak[/gold].\\nApply 1 [gold]Vulnerable[/gold].",
+        "new": "Deal 12 damage.\\nApply 1 [gold]Weak[/gold].\\nApply 1 [gold]Vulnerable[/gold]."
+      }
+    },
+    "Glitterstream": {
+      "description": {
+        "old": "Gain 13 [gold]Block[/gold].\\nNext turn, gain 4 [gold]Block[/gold].",
+        "new": "Gain 11 [gold]Block[/gold].\\nNext turn, gain 5 [gold]Block[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 13 [gold]Block[/gold].\\nNext turn, gain 6 [gold]Block[/gold].",
+        "new": "Gain 13 [gold]Block[/gold].\\nNext turn, gain 7 [gold]Block[/gold]."
+      }
+    },
+    "Parry": {
+      "description": {
+        "old": "Whenever you play [gold]Sovereign Blade[/gold], gain 8 [gold]Block[/gold].",
+        "new": "Whenever you play [gold]Sovereign Blade[/gold], gain 10 [gold]Block[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you play [gold]Sovereign Blade[/gold], gain 11 [gold]Block[/gold].",
+        "new": "Whenever you play [gold]Sovereign Blade[/gold], gain 14 [gold]Block[/gold]."
+      }
+    },
+    "Refine Blade": {
+      "description": {
+        "old": "[gold]Forge[/gold] 6.\\nNext turn, gain [energy:1].",
+        "new": "[gold]Forge[/gold] 9.\\nNext turn, gain [energy:1]."
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Forge[/gold] 10.\\nNext turn, gain [energy:1].",
+        "new": "[gold]Forge[/gold] 13.\\nNext turn, gain [energy:1]."
+      }
+    },
+    "Celestial Might": {
+      "description": {
+        "old": "Deal 6 damage 4 times.",
+        "new": "Deal 6 damage 3 times."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 8 damage 3 times.",
+        "new": "Deal 6 damage 4 times."
+      }
+    },
+    "Guiding Star": {
+      "description": {
+        "old": "Deal 12 damage.\\nDraw 2 cards next turn.",
+        "new": "Deal 12 damage.\\nDraw 2 cards."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 13 damage.\\nDraw 3 cards next turn.",
+        "new": "Deal 13 damage.\\nDraw 3 cards."
+      }
+    },
+    "Sword Sage": {
+      "description": {
+        "old": "[gold]Sovereign Blade[/gold] now hits an additional time. \\n[gold]Soverign Blade[/gold] costs an additional [energy:1].",
+        "new": "[gold]Sovereign Blade[/gold] now hits an additional time."
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Sovereign Blade[/gold] now hits an additional time. \\n[gold]Soverign Blade[/gold] costs an additional [energy:1].",
+        "new": "[gold]Sovereign Blade[/gold] now hits an additional time."
+      }
+    },
+    "Spoils Of Battle": {
+      "description": {
+        "old": "[gold]Forge[/gold] 12.",
+        "new": "[gold]Forge[/gold] 5.\\nDraw 2 cards."
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Forge[/gold] 17.",
+        "new": "[gold]Forge[/gold] 8.\\nDraw 2 cards."
+      }
+    }
+  },
+  "relics": {
+    "Vexing Puzzlebox": {
+      "description": {
+        "old": "At the start of each combat, add a random card into your [gold]Hand[/gold]. It costs [energy:0]. .",
+        "new": "At the start of each combat, add a random card into your [gold]Hand[/gold]. It's free to play this turn."
+      }
+    },
+    "Crossbow": {
+      "description": {
+        "old": "At the start of your turn, add a random [gold]Attack[/gold] into your [gold]Hand[/gold]. It costs [energy:0] this turn.",
+        "new": "At the start of your turn, add a random [gold]Attack[/gold] into your [gold]Hand[/gold]. It's free to play this turn."
+      }
+    },
+    "Lasting Candy": {
+      "rarity": {
+        "old": "Rare",
+        "new": "Uncommon"
+      }
+    },
+    "Bellows": {
+      "rarity": {
+        "old": "Uncommon",
+        "new": "Rare"
+      }
+    },
+    "Red Mask": {
+      "rarity": {
+        "old": "Uncommon",
+        "new": "Common"
+      }
+    },
+    "Bag Of Marbles": {
+      "rarity": {
+        "old": "Uncommon",
+        "new": "Common"
+      }
+    },
+    "Permafrost": {
+      "rarity": {
+        "old": "Common",
+        "new": "Uncommon"
+      }
+    },
+    "Tiny Mailbox": {
+      "rarity": {
+        "old": "Common",
+        "new": "Uncommon"
+      },
+      "description": {
+        "old": "Whenever you [gold]Rest[/gold], procure [blue]1[/blue] random potions.",
+        "new": "Whenever you [gold]Rest[/gold], procure [blue]2[/blue] random potions."
+      }
+    },
+    "Pendulum": {
+      "description": {
+        "old": "Whenever you shuffle your [gold]Draw Pile[/gold], [gold]draw [/gold]a card.",
+        "new": "Every [blue]3[/blue] turns, draw [blue]1[/blue] card."
+      }
+    }
+  },
+  "enchantments": {}
+}

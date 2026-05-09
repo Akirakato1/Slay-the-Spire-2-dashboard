@@ -1,0 +1,557 @@
+{
+  "from": "v0.100.0",
+  "to": "v0.99.1",
+  "released_on": "2026-03-19",
+  "summary": "2026-03-19 (Beta v.0.100.0)",
+  "cards": {
+    "Banshees Cry": {
+      "descriptionUpgraded": {
+        "old": "Deal 40 damage to ALL enemies.\\nCosts [energy:2] less for each [gold]Ethereal[/gold] card played this combat.",
+        "new": "Deal 33 damage to ALL enemies.\\nCosts [energy:2] less for each [gold]Ethereal[/gold] card played this combat."
+      },
+      "manaCost": {
+        "old": 6,
+        "new": 9
+      },
+      "manaCostUpgraded": {
+        "old": 6,
+        "new": 7
+      }
+    },
+    "Dominate": {
+      "description": {
+        "old": "Gain 1 [gold]Strength[/gold] for each [gold]Vulnerable[/gold] on the enemy.\\n[gold]Exhaust.[/gold]",
+        "new": "Apply 1 [gold]Vulnerable[/gold].\\nGain 1 [gold]Strength[/gold] for each [gold]Vulnerable[/gold] on the enemy.\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 1 [gold]Strength[/gold] for each [gold]Vulnerable[/gold] on the enemy.",
+        "new": "Apply 2 [gold]Vulnerable[/gold].\\nGain 1 [gold]Strength[/gold] for each [gold]Vulnerable[/gold] on the enemy.\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Expect A Fight": {
+      "description": {
+        "old": "Gain [energy:1] for each Attack in your [gold]Hand[/gold].",
+        "new": "Gain [energy:1] for each Attack in your [gold]Hand[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain [energy:1] for each Attack in your [gold]Hand[/gold].",
+        "new": "Gain [energy:1] for each Attack in your [gold]Hand[/gold].\\nYou cannot gain\\nadditional [energy:1] this turn."
+      }
+    },
+    "Spite": {
+      "description": {
+        "old": "Deal 6 damage. \\nIf you lost HP this turn, draw 1 card.",
+        "new": "Deal 5 damage.\\nIf you lost HP this turn,\\nhits 2 times."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage. \\nIf you lost HP this turn, draw 1 card.",
+        "new": "Deal 5 damage.\\nIf you lost HP this turn,\\nhits 3 times."
+      }
+    },
+    "Stoke": {
+      "description": {
+        "old": "Exhaust your Hand. Draw a card for each card Exhausted. Exhaust.",
+        "new": "[gold]Exhaust[/gold] your [gold]Hand[/gold].\\nAdd 1 random card into your [gold]Hand[/gold] for each card [gold]Exhausted[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Exhaust your Hand. Draw a card for each card Exhausted. Exhaust.",
+        "new": "[gold]Exhaust[/gold] your [gold]Hand[/gold].\\nAdd 1 random [gold]Upgraded[/gold] card into your [gold]Hand[/gold] for each card [gold]Exhausted[/gold]."
+      },
+      "manaCostUpgraded": {
+        "old": 0,
+        "new": 1
+      }
+    },
+    "Glow": {
+      "description": {
+        "old": "Gain [star:1].\\nDraw 2 card.",
+        "new": "Gain [star:1].\\nDraw 1 card.\\nNext turn, draw 1 card."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain [star:2].\\nDraw 2 card.",
+        "new": "Gain [star:2].\\nDraw 1 card.\\nNext turn, draw 1 card."
+      }
+    },
+    "Break": {
+      "description": {
+        "old": "Deal 20 damage.\\nApply 5 [gold]Vulnerable[/gold].",
+        "new": "Deal 25 damage.\\nApply 5 [gold]Vulnerable[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 25 damage.\\nApply 7 [gold]Vulnerable[/gold].",
+        "new": "Deal 30 damage.\\nApply 7 [gold]Vulnerable[/gold]."
+      },
+      "manaCost": {
+        "old": 2,
+        "new": 1
+      }
+    },
+    "Anticipate": {
+      "description": {
+        "old": "Gain 3 [gold]Dexterity[/gold] this turn.",
+        "new": "Gain 2 [gold]Dexterity[/gold] this turn."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 5 [gold]Dexterity[/gold] this turn.",
+        "new": "Gain 3 [gold]Dexterity[/gold] this turn."
+      }
+    },
+    "Corrosive Wave": {
+      "description": {
+        "old": "Whenever you draw a card this turn, apply 3 [gold]Poison[/gold] to ALL enemies.",
+        "new": "Whenever you draw a card this turn, apply 2 [gold]Poison[/gold] to ALL enemies."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you draw a card this turn, apply 4 [gold]Poison[/gold] to ALL enemies.",
+        "new": "Whenever you draw a card this turn, apply 3 [gold]Poison[/gold] to ALL enemies."
+      }
+    },
+    "Grand Finale": {
+      "description": {
+        "old": "Can only be played if there are no cards in your [gold]Draw Pile[/gold]. Deal 50 damage to ALL enemies.",
+        "new": "Can only be played if there are no cards in your [gold]Draw Pile[/gold]. Deal 60 damage to ALL enemies."
+      },
+      "descriptionUpgraded": {
+        "old": "Can only be played if there are no cards in your [gold]Draw Pile[/gold]. Deal 60 damage to ALL enemies.",
+        "new": "Can only be played if there are no cards in your [gold]Draw Pile[/gold]. Deal 75 damage to ALL enemies."
+      }
+    },
+    "Pinpoint": {
+      "description": {
+        "old": "Deal 17 damage.\\nCosts 1 less [energy:1] for each Skill played this turn.",
+        "new": "Deal 15 damage.\\nCosts 1 less [energy:1] for each Skill played this turn."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 22 damage.\\nCosts 1 less [energy:1] for each Skill played this turn.",
+        "new": "Deal 19 damage.\\nCosts 1 less [energy:1] for each Skill played this turn."
+      }
+    },
+    "Skewer": {
+      "description": {
+        "old": "Deal 7 damage X times.",
+        "new": "Deal 8 damage X times."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 10 damage X times.",
+        "new": "Deal 11 damage X times."
+      }
+    },
+    "Untouchable": {
+      "description": {
+        "old": "Gain 9 [gold]Block[/gold].\\n[gold]Sly.[/gold]",
+        "new": "Gain 7 [gold]Block[/gold].\\n[gold]Sly.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 12 [gold]Block[/gold].\\n[gold]Sly.[/gold]",
+        "new": "Gain 9 [gold]Block[/gold].\\n[gold]Sly.[/gold]"
+      }
+    },
+    "Alignment": {
+      "starCost": {
+        "old": 2,
+        "new": 3
+      },
+      "starCostUpgraded": {
+        "old": 2,
+        "new": 3
+      }
+    },
+    "Begone!": {
+      "type": {
+        "old": "Attack",
+        "new": "Skill"
+      },
+      "description": {
+        "old": "Deal 4 Damage. Choose a card in your Hand to Transform into a [gold]Minion Dive Bomb.[/gold]",
+        "new": "Choose a card in your [gold]Hand[/gold] to [gold]Transform[/gold] into [gold]Minion Strike[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 6 Damage. Choose a card in your Hand to Transform into a [gold]Minion Dive Bomb+.[/gold]",
+        "new": "Choose a card in your [gold]Hand[/gold] to [gold]Transform[/gold] into [gold]Minion Strike+[/gold]."
+      }
+    },
+    "Charge!!": {
+      "description": {
+        "old": "Choose 2 cards in your [gold]Draw Pile[/gold] to [gold]Transform[/gold] into\\n[gold]Minion Strike[/gold].",
+        "new": "Choose 2 cards in your [gold]Draw Pile[/gold] to [gold]Transform[/gold] into\\n[gold]Minion Dive Bombs[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Choose 2 cards in your [gold]Draw Pile[/gold] to [gold]Transform[/gold] into\\n[gold]Minion Strike+[/gold].",
+        "new": "Choose 2 cards in your [gold]Draw Pile[/gold] to [gold]Transform[/gold] into\\n[gold]Minion Dive Bombs+[/gold]."
+      }
+    },
+    "Collision Course": {
+      "description": {
+        "old": "Deal 9 damage.\\nAdd a [gold]Debris[/gold] into your [gold]Hand[/gold].",
+        "new": "Deal 11 damage.\\nAdd a [gold]Debris[/gold] into your [gold]Hand[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 12 damage.\\nAdd a [gold]Debris[/gold] into your [gold]Hand[/gold].",
+        "new": "Deal 15 damage.\\nAdd a [gold]Debris[/gold] into your [gold]Hand[/gold]."
+      }
+    },
+    "Gather Light": {
+      "description": {
+        "old": "Gain 7 [gold]Block[/gold].\\nGain [star:1].",
+        "new": "Gain 8 [gold]Block[/gold].\\nGain [star:1]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 10 [gold]Block[/gold].\\nGain [star:1].",
+        "new": "Gain 11 [gold]Block[/gold].\\nGain [star:1]."
+      }
+    },
+    "Heirloom Hammer": {
+      "description": {
+        "old": "Deal 17 damage.\\nChoose a Colorless card in your [gold]Hand[/gold]. Add a copy of that card into your [gold]Hand[/gold].",
+        "new": "Deal 20 damage.\\nChoose a Colorless card in your [gold]Hand[/gold]. Add a copy of that card into your [gold]Hand[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 22 damage.\\nChoose a Colorless card in your [gold]Hand[/gold]. Add a copy of that card into your [gold]Hand[/gold].",
+        "new": "Deal 25 damage.\\nChoose a Colorless card in your [gold]Hand[/gold]. Add a copy of that card into your [gold]Hand[/gold]."
+      }
+    },
+    "I Am Invincible": {
+      "description": {
+        "old": "Gain 9 [gold]Block[/gold].\\nAt the end of your turn, if this is on top of your [gold]Draw Pile[/gold], play it.",
+        "new": "Gain 10 [gold]Block[/gold].\\nAt the end of your turn, if this is on top of your [gold]Draw Pile[/gold], play it."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 12 [gold]Block[/gold].\\nAt the end of your turn, if this is on top of your [gold]Draw Pile[/gold], play it.",
+        "new": "Gain 13 [gold]Block[/gold].\\nAt the end of your turn, if this is on top of your [gold]Draw Pile[/gold], play it."
+      }
+    },
+    "Kingly Kick": {
+      "description": {
+        "old": "Deal 24 damage.\\nWhenever you draw this card, reduce its cost by 1.",
+        "new": "Deal 27 damage.\\nWhenever you draw this card, reduce its cost by 1."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 30 damage.\\nWhenever you draw this card, reduce its cost by 1.",
+        "new": "Deal 35 damage.\\nWhenever you draw this card, reduce its cost by 1."
+      }
+    },
+    "Kingly Punch": {
+      "description": {
+        "old": "Deal 8 damage.\\nWhenever you draw this card, increase its damage by 3 this combat.",
+        "new": "Deal 8 damage.\\nWhenever you draw this card, increase its damage by 4 this combat."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 8 damage.\\nWhenever you draw this card, increase its damage by 5 this combat.",
+        "new": "Deal 10 damage.\\nWhenever you draw this card, increase its damage by 6 this combat."
+      }
+    },
+    "Minion Dive Bomb": {
+      "manaCost": {
+        "old": 1,
+        "new": 0
+      },
+      "manaCostUpgraded": {
+        "old": 1,
+        "new": 0
+      }
+    },
+    "Minion Strike": {
+      "description": {
+        "old": "Deal 7 damage.\\nDraw 1 card.\\n[gold]Exhaust.[/gold]",
+        "new": "Deal 6 damage.\\nDraw 1 card.\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 10 damage.\\nDraw 1 card.\\n[gold]Exhaust.[/gold]",
+        "new": "Deal 9 damage.\\nDraw 1 card.\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Parry": {
+      "description": {
+        "old": "Whenever you play [gold]Sovereign Blade[/gold], gain 6 [gold]Block[/gold].",
+        "new": "Whenever you play [gold]Sovereign Blade[/gold], gain 8 [gold]Block[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you play [gold]Sovereign Blade[/gold], gain 9 [gold]Block[/gold].",
+        "new": "Whenever you play [gold]Sovereign Blade[/gold], gain 11 [gold]Block[/gold]."
+      }
+    },
+    "Patter": {
+      "description": {
+        "old": "Gain 8 [gold]Block[/gold].\\nGain 2 [gold]Vigor[/gold].",
+        "new": "Gain 9 [gold]Block[/gold].\\nGain 2 [gold]Vigor[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 10 [gold]Block[/gold].\\nGain 2 [gold]Vigor[/gold].",
+        "new": "Gain 11 [gold]Block[/gold].\\nGain 2 [gold]Vigor[/gold]."
+      }
+    },
+    "Solar Strike": {
+      "description": {
+        "old": "Deal 8 damage.\\nGain [star:1].",
+        "new": "Deal 9 damage.\\nGain [star:1]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage.\\nGain [star:2].",
+        "new": "Deal 10 damage.\\nGain [star:2]."
+      }
+    },
+    "Spoils Of Battle": {
+      "description": {
+        "old": "[gold]Forge[/gold] 10.",
+        "new": "[gold]Forge[/gold] 12."
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Forge[/gold] 15.",
+        "new": "[gold]Forge[/gold] 17."
+      }
+    },
+    "Void Form": {
+      "description": {
+        "old": "End your turn.\\nThe first 2 cards you play each turn are free to play.",
+        "new": "End your turn.\\nThe first 2 cards you play each turn are free to play.\\n[gold]Ethereal.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "End your turn.\\nThe first 3 cards you play each turn are free to play.",
+        "new": "End your turn.\\nThe first 2 cards you play each turn are free to play."
+      }
+    },
+    "Wrought In War": {
+      "description": {
+        "old": "Deal 7 damage.\\n[gold]Forge[/gold] 5.",
+        "new": "Deal 7 damage.\\n[gold]Forge[/gold] 7."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 7 damage.\\n[gold]Forge[/gold] 7.",
+        "new": "Deal 9 damage.\\n[gold]Forge[/gold] 9."
+      }
+    },
+    "Borrowed Time": {
+      "description": {
+        "old": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:1]",
+        "new": "Apply 6 [purple]Doom [/purple]to yourself. Gain [energy:1]"
+      },
+      "descriptionUpgraded": {
+        "old": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:2]",
+        "new": "Apply 3 [purple]Doom [/purple]to yourself. Gain [energy:1]"
+      }
+    },
+    "Capture Spirit": {
+      "description": {
+        "old": "Enemy loses 3 HP.\\nAdd 3 [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Enemy loses 2 HP.\\nAdd 2 [gold]Souls[/gold] into your [gold]Draw Pile[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Enemy loses 4 HP.\\nAdd 4 [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Enemy loses 3 HP.\\nAdd 3 [gold]Souls[/gold] into your [gold]Draw Pile[/gold]."
+      }
+    },
+    "Danse Macabre": {
+      "description": {
+        "old": "Whenever you play a card that costs [energy:2] or more, gain 3 [gold]Block[/gold].",
+        "new": "Whenever you play a card that costs [energy:2] or more, gain 4 [gold]Block[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Whenever you play a card that costs [energy:2] or more, gain 4 [gold]Block[/gold].",
+        "new": "Whenever you play a card that costs [energy:2] or more, gain 6 [gold]Block[/gold]."
+      }
+    },
+    "Debilitate": {
+      "description": {
+        "old": "Deal 7 damage.\\n[gold]Vulnerable[/gold] and [gold]Weak[/gold] are twice as effective against the enemy for the next 3 turns.",
+        "new": "Deal 10 damage.\\n[gold]Vulnerable[/gold] and [gold]Weak[/gold] are twice as effective against the enemy for the next 3 turns."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage.\\n[gold]Vulnerable[/gold] and [gold]Weak[/gold] are twice as effective against the enemy for the next 4 turns.",
+        "new": "Deal 12 damage.\\n[gold]Vulnerable[/gold] and [gold]Weak[/gold] are twice as effective against the enemy for the next 4 turns."
+      }
+    },
+    "Defy": {
+      "description": {
+        "old": "Gain 6 [gold]Block[/gold].\\nApply 1 [gold]Weak[/gold].\\n[gold]Ethereal.[/gold]",
+        "new": "Gain 6 [gold]Block[/gold].\\nApply 1 [gold]Weak[/gold].\\n[gold]Ethereal.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 6 [gold]Block[/gold].\\nApply 2 [gold]Weak[/gold].\\n[gold]Ethereal.[/gold]",
+        "new": "Gain 9 [gold]Block[/gold].\\nApply 1 [gold]Weak[/gold].\\n[gold]Ethereal.[/gold]"
+      }
+    },
+    "Dirge": {
+      "description": {
+        "old": "[gold]Summon[/gold] 3 X times.\\nAdd X [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "[gold]Summon[/gold] 3 X times.\\nAdd X [gold]Souls[/gold] into your [gold]Draw Pile[/gold].\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "[gold]Summon[/gold] 4 X times.\\nAdd X [gold]Souls+[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "[gold]Summon[/gold] 4 X times.\\nAdd X [gold]Souls+[/gold] into your [gold]Draw Pile[/gold].\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Grave Warden": {
+      "description": {
+        "old": "Gain 8 [gold]Block[/gold].\\nAdd a [gold]Soul[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Gain 8 [gold]Block[/gold].\\nAdd a [gold]Soul[/gold] into your [gold]Draw Pile[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 10 [gold]Block[/gold].\\nAdd a [gold]Soul+[/gold] into your [gold]Draw Pile[/gold].",
+        "new": "Gain 11 [gold]Block[/gold].\\nAdd a [gold]Soul[/gold] into your [gold]Draw Pile[/gold]."
+      }
+    },
+    "Sculpting Strike": {
+      "description": {
+        "old": "Deal 8 damage.\\nAdd [gold]Ethereal[/gold] to a card in your [gold]Hand[/gold].",
+        "new": "Deal 9 damage.\\nAdd [gold]Ethereal[/gold] to a card in your [gold]Hand[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 11 damage.\\nAdd [gold]Ethereal[/gold] to a card in your [gold]Hand[/gold].",
+        "new": "Deal 12 damage.\\nAdd [gold]Ethereal[/gold] to a card in your [gold]Hand[/gold]."
+      }
+    },
+    "Seance": {
+      "description": {
+        "old": "Transform a card in your [gold]Draw Pile[/gold] into [gold]Soul[/gold].\\n[gold]Ethereal.[/gold]",
+        "new": "Transform a card in your [gold]Draw Pile[/gold] into [gold]Soul[/gold].\\n[gold]Ethereal.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Transform a card in your [gold]Draw Pile[/gold] into [gold]Soul+[/gold].\\n[gold]Ethereal.[/gold]",
+        "new": "Transform a card in your [gold]Draw Pile[/gold] into [gold]Soul[/gold].\\n[gold]Ethereal.[/gold]"
+      },
+      "manaCost": {
+        "old": 0,
+        "new": 1
+      }
+    },
+    "Hotfix": {
+      "description": {
+        "old": "Gain 2 [gold]Focus[/gold] this turn.",
+        "new": "Gain 2 [gold]Focus[/gold] this turn.\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 3 [gold]Focus[/gold] this turn.",
+        "new": "Gain 2 [gold]Focus[/gold] this turn."
+      }
+    },
+    "Rocket Punch": {
+      "description": {
+        "old": "Deal 14 damage.\\nDraw 2 cards.\\nWhenever you create a Status, reduce this card's cost to 0 [energy:1] until end of turn.",
+        "new": "Deal 13 damage.\\nDraw 1 card.\\nWhenever you create a Status, reduce this card's cost to 0 [energy:1] until played."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 14 damage.\\nDraw 2 cards.\\nWhenever you create a Status, reduce this card's cost to 0 [energy:1] until end of turn.",
+        "new": "Deal 14 damage.\\nDraw 2 cards.\\nWhenever you create a Status, reduce this card's cost to 0 [energy:1] until played."
+      }
+    },
+    "Seeker Strike": {
+      "description": {
+        "old": "Deal 6 damage.\\nChoose 1 of 3 cards in your [gold]Draw Pile[/gold] to add into your [gold]Hand[/gold].",
+        "new": "Deal 9 damage.\\nChoose 1 of 3 cards in your [gold]Draw Pile[/gold] to add into your [gold]Hand[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage.\\nChoose 1 of 3 cards in your [gold]Draw Pile[/gold] to add into your [gold]Hand[/gold].",
+        "new": "Deal 12 damage.\\nChoose 1 of 3 cards in your [gold]Draw Pile[/gold] to add into your [gold]Hand[/gold]."
+      }
+    },
+    "Discovery": {
+      "description": {
+        "old": "Choose 1 of 3 random cards to add into your [gold]Hand[/gold].  It costs [energy:0] this turn.",
+        "new": "Choose 1 of 3 random cards to add into your [gold]Hand[/gold]. It's free to play this turn.\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Choose 1 of 3 random cards to add into your [gold]Hand[/gold]. It costs [energy:0] this turn.",
+        "new": "Choose 1 of 3 random cards to add into your [gold]Hand[/gold]. It's free to play this turn."
+      }
+    },
+    "Eternal Armor": {
+      "description": {
+        "old": "Gain 7 [gold]Plating[/gold].",
+        "new": "Gain 9 [gold]Plating[/gold]."
+      },
+      "descriptionUpgraded": {
+        "old": "Gain 9 [gold]Plating[/gold].",
+        "new": "Gain 12 [gold]Plating[/gold]."
+      }
+    },
+    "Production": {
+      "description": {
+        "old": "Gain [energy:2].\\n[gold]Exhaust.[/gold]",
+        "new": "Gain [energy:2].\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Gain [energy:2].",
+        "new": "Gain [energy:3].\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Neow's Fury": {
+      "description": {
+        "old": "Deal 10 damage.\\nPut 2 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold].\\n[gold]Exhaust.[/gold]",
+        "new": "Deal 10 damage.\\nPut 2 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold].\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 14 damage.\\nPut 2 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold].\\n[gold]Exhaust.[/gold]",
+        "new": "Deal 14 damage.\\nPut 3 random cards from your [gold]Discard Pile[/gold] into your [gold]Hand[/gold].\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Believe in You": {
+      "description": {
+        "old": "Another player gains [energy:3].",
+        "new": "Another player gains [energy:2]."
+      },
+      "descriptionUpgraded": {
+        "old": "Another player gains [energy:4].",
+        "new": "Another player gains [energy:3]."
+      }
+    },
+    "Huddle Up": {
+      "description": {
+        "old": "ALL players draw 2 cards.",
+        "new": "ALL players draw 2 cards.\\n[gold]Exhaust.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "ALL players draw 3 cards.",
+        "new": "ALL players draw 3 cards.\\n[gold]Exhaust.[/gold]"
+      }
+    },
+    "Flick-Flack": {
+      "description": {
+        "old": "Deal 7 damage to ALL enemies.\\n[gold]Sly.[/gold]",
+        "new": "Deal 6 damage to ALL enemies.\\n[gold]Sly.[/gold]"
+      },
+      "descriptionUpgraded": {
+        "old": "Deal 9 damage to ALL enemies.\\n[gold]Sly.[/gold]",
+        "new": "Deal 8 damage to ALL enemies.\\n[gold]Sly.[/gold]"
+      }
+    }
+  },
+  "relics": {
+    "Stone Cracker": {
+      "description": {
+        "old": "At the start of Boss combat, [gold]Upgrade[/gold] [blue]3[/blue] random cards in your [gold]Draw Pile[/gold] for the rest of combat.",
+        "new": "At the start of each combat, [gold]Upgrade[/gold] [blue]2[/blue] random cards in your [gold]Draw Pile[/gold] for the rest of combat."
+      }
+    },
+    "Planisphere": {
+      "description": {
+        "old": "Whenever you enter a [gold]?[/gold] room, heal [green]4[/green] HP.",
+        "new": "Whenever you enter a [gold]?[/gold] room, heal [green]5[/green] HP."
+      }
+    },
+    "Permafrost": {
+      "description": {
+        "old": "The first time you play a Power each combat, gain [blue]6[/blue] [gold]Block[/gold].",
+        "new": "The first time you play a Power each combat, gain [blue]7[/blue] [gold]Block[/gold]."
+      }
+    },
+    "Bowler Hat": {
+      "description": {
+        "old": "Gain [blue]20%[/blue] additional [gold]Gold[/gold].",
+        "new": "Gain [blue]25%[/blue] additional [gold]Gold[/gold]."
+      }
+    },
+    "Book Of Five Rings": {
+      "description": {
+        "old": "Every [blue]5[/blue] cards you add to your [gold]Deck[/gold], heal [green]15[/green] HP.",
+        "new": "Every [blue]5[/blue] cards you add to your [gold]Deck[/gold], heal [green]20[/green] HP."
+      }
+    },
+    "Amethyst Aubergine": {
+      "description": {
+        "old": "Enemies drop [blue]10[/blue] additional [gold]Gold[/gold].",
+        "new": "Enemies drop [blue]15[/blue] additional [gold]Gold[/gold]."
+      }
+    }
+  },
+  "enchantments": {}
+}
