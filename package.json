@@ -31,6 +31,9 @@
       "README.md",
       "package.json"
     ],
+    "asarUnpack": [
+      "card render assets/**/*"
+    ],
     "win": {
       "target": "portable",
       "icon": "STS2S.ico"

@@ -18,7 +18,12 @@
 
 // ── Asset paths ─────────────────────────────────────────────────────────────
 
-const A = (sub) => `cardassets://${sub}`;
+// 3-slash form (`cardassets:///path`) keeps the entire path *as path*
+// instead of treating the first segment as a URL host. Hosts are subject
+// to URL normalization (lowercasing); paths are not. This matters for
+// production builds because the asar archive is case-sensitive and has
+// `Frame/`, `Banner/`, etc. with their original capitalization.
+const A = (sub) => `cardassets:///${sub}`;
 
 const FRAME_PATHS = {
   attack:  A('Frame/frame_attack.png'),

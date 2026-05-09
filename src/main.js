@@ -46,7 +46,15 @@ const rawDir         = path.join(extractionDir, 'raw');
 const decompiledDir  = path.join(extractionDir, 'decompiled');
 
 // Repo-bundled card-render asset directory served via `cardassets://`.
-const CARD_ASSETS_DIR = path.join(__dirname, '..', 'card render assets');
+// Card render assets are bundled with the app. In production, electron-
+// builder packs the source into app.asar — but reading binary blobs out
+// of asar is fragile (case-sensitive lookup; some Electron APIs can't
+// resolve asar paths). The build config opts these out via `asarUnpack`,
+// which extracts them next to the asar at app.asar.unpacked/. We resolve
+// to the unpacked path in production, and to the source folder in dev.
+const CARD_ASSETS_DIR = app.isPackaged
+  ? path.join(process.resourcesPath, 'app.asar.unpacked', 'card render assets')
+  : path.join(__dirname, '..', 'card render assets');
 
 try { fs.mkdirSync(settingsDir,   { recursive: true }); } catch (_) {}
 try { fs.mkdirSync(dataDir,       { recursive: true }); } catch (_) {}
@@ -1302,10 +1310,31 @@ app.whenReady().then(() => {
     const filePath = path.join(rawDir, decodeURIComponent(url));
     return net.fetch(fileUrl(filePath));
   });
-  protocol.handle('cardassets', (request) => {
-    const url = request.url.slice('cardassets://'.length);
-    const filePath = path.join(CARD_ASSETS_DIR, decodeURIComponent(url));
-    return net.fetch(fileUrl(filePath));
+  // `card render assets/` ships inside the .exe (asar archive in
+  // production builds). Two things to handle:
+  //   1. `net.fetch('file://...')` can't resolve paths inside an asar
+  //      archive — read with `fs.readFile` (Electron patches it for
+  //      asar) and return a Response with the bytes directly.
+  //   2. URL hosts get lowercased by URL normalization, so the renderer
+  //      uses the 3-slash form `cardassets:///Frame/foo.png` to keep
+  //      the directory name in the case-preserving PATH portion. We
+  //      strip a single leading slash here for path.join.
+  protocol.handle('cardassets', async (request) => {
+    const sub  = request.url.slice('cardassets://'.length).replace(/^\//, '');
+    const filePath = path.join(CARD_ASSETS_DIR, decodeURIComponent(sub));
+    try {
+      const buf = await fs.promises.readFile(filePath);
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType =
+        ext === '.png'  ? 'image/png'  :
+        ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+        ext === '.svg'  ? 'image/svg+xml' :
+        ext === '.ttf'  ? 'font/ttf' :
+        'application/octet-stream';
+      return new Response(buf, { headers: { 'Content-Type': contentType } });
+    } catch (e) {
+      return new Response(`cardassets not found: ${sub}`, { status: 404 });
+    }
   });
 
   const config = readConfig();
