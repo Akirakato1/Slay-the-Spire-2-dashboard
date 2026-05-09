@@ -1,0 +1,2053 @@
+[
+  {
+    "name": "Akabeko",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of each combat, gain [blue]8[/blue] [gold]Vigor[/gold].",
+    "imageFile": "relics/akabeko.png"
+  },
+  {
+    "name": "Alchemical Coffer",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]4[/blue] potion slots filled with random potions.",
+    "imageFile": "relics/alchemical_coffer.png"
+  },
+  {
+    "name": "Amethyst Aubergine",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Enemies drop [blue]15[/blue] additional [gold]Gold[/gold].",
+    "imageFile": "relics/amethyst_aubergine.png"
+  },
+  {
+    "name": "Anchor",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Start each combat with [blue]10[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/anchor.png"
+  },
+  {
+    "name": "Anchor???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Start each combat with [blue]4[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/fake_anchor.png"
+  },
+  {
+    "name": "Arcane Scroll",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain a random [gold]Rare Card[/gold] to add to your [gold]Deck[/gold].",
+    "imageFile": "relics/arcane_scroll.png"
+  },
+  {
+    "name": "Archaic Tooth",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Transform[/gold] a starter card into an ancient version.",
+    "imageFile": "relics/archaic_tooth.png"
+  },
+  {
+    "name": "Art of War",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "If you do not play any Attacks during your turn, gain an additional [energy:1] next turn.",
+    "imageFile": "relics/art_of_war.png"
+  },
+  {
+    "name": "Astrolabe",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Transform[/gold] [blue]3[/blue] cards, then [gold]Upgrade[/gold] them.",
+    "imageFile": "relics/astrolabe.png"
+  },
+  {
+    "name": "Bag of Marbles",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, apply [blue]1[/blue] [gold]Vulnerable[/gold] to ALL enemies.",
+    "imageFile": "relics/bag_of_marbles.png"
+  },
+  {
+    "name": "Bag of Preparation",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, draw [blue]2[/blue] additional cards.",
+    "imageFile": "relics/bag_of_preparation.png"
+  },
+  {
+    "name": "Beating Remnant",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "You cannot lose more than [blue]20[/blue] HP in a single turn.",
+    "imageFile": "relics/beating_remnant.png"
+  },
+  {
+    "name": "Beautiful Bracelet",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, choose [blue]3[/blue] cards in your [gold]Deck[/gold]. [gold]Enchant[/gold] them with [purple]Swift[/purple] [blue]3[/blue].",
+    "imageFile": "relics/beautiful_bracelet.png"
+  },
+  {
+    "name": "Bellows",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "The first [gold]Hand[/gold] you draw each combat is [gold]Upgraded[/gold].",
+    "imageFile": "relics/bellows.png"
+  },
+  {
+    "name": "Belt Buckle",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "While you have no potions, you have [blue]2[/blue] additional [gold]Dexterity[/gold].",
+    "imageFile": "relics/belt_buckle.png"
+  },
+  {
+    "name": "Big Hat",
+    "rarity": "Rare",
+    "character": "Necrobinder",
+    "description": "At the start of each combat, add [blue]2[/blue] random [gold]Ethereal[/gold] cards into your [gold]Hand[/gold].",
+    "imageFile": "relics/big_hat.png"
+  },
+  {
+    "name": "Big Mushroom",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]20[/blue]. At the start of each combat, draw [blue]2[/blue] fewer cards.",
+    "imageFile": "relics/big_mushroom.png"
+  },
+  {
+    "name": "Biiig Hug",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]4[/blue] cards from your [gold]Deck[/gold]. Whenever you shuffle your [gold]Draw Pile[/gold], add a [gold]Soot[/gold] into your [gold]Draw Pile[/gold].",
+    "imageFile": "relics/biiig_hug.png"
+  },
+  {
+    "name": "Bing Bong",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you add a card to your [gold]Deck[/gold], add one additional copy.",
+    "imageFile": "relics/bing_bong.png"
+  },
+  {
+    "name": "Black Blood",
+    "rarity": "Starter",
+    "character": "Ironclad",
+    "description": "At the end of combat, heal [green]12[/green] HP.",
+    "imageFile": "relics/black_blood.png"
+  },
+  {
+    "name": "Black Star",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "[gold]Elites[/gold] drop an additional Relic when defeated.",
+    "imageFile": "relics/black_star.png"
+  },
+  {
+    "name": "Blessed Antler",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. At the start of each combat, shuffle [blue]3[/blue] [gold]Dazed[/gold] into your [gold]Draw Pile[/gold].",
+    "imageFile": "relics/blessed_antler.png"
+  },
+  {
+    "name": "Blood Vial",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, heal [green]2[/green] HP.",
+    "imageFile": "relics/blood_vial.png"
+  },
+  {
+    "name": "Blood Vial???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of each combat, heal [green]1[/green] HP.",
+    "imageFile": "relics/fake_blood_vial.png"
+  },
+  {
+    "name": "Blood-Soaked Rose",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]1[/blue] [red]Enthralled[/red] to your [gold]Deck[/gold]. Gain [energy:1] at the start of each turn.",
+    "imageFile": "relics/blood_soaked_rose.png"
+  },
+  {
+    "name": "Bone Flute",
+    "rarity": "Common",
+    "character": "Necrobinder",
+    "description": "Whenever [gold]Osty[/gold] attacks, gain [blue]2[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/bone_flute.png"
+  },
+  {
+    "name": "Bone Tea",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of the next [blue]2[/blue] combats, [gold]Upgrade[/gold] your starting hand.",
+    "imageFile": "relics/bone_tea.png"
+  },
+  {
+    "name": "Book of Five Rings",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Every [blue]5[/blue] cards you add to your [gold]Deck[/gold], heal [green]20[/green] HP.",
+    "imageFile": "relics/book_of_five_rings.png"
+  },
+  {
+    "name": "Book Repair Knife",
+    "rarity": "Uncommon",
+    "character": "Necrobinder",
+    "description": "Whenever a non-Minion enemy dies to [gold]Doom[/gold], heal [green]3[/green] HP.",
+    "imageFile": "relics/book_repair_knife.png"
+  },
+  {
+    "name": "Bookmark",
+    "rarity": "Rare",
+    "character": "Necrobinder",
+    "description": "At the end of each turn, lower the cost of a random [gold]Retained[/gold] card by [blue]1[/blue] until played.",
+    "imageFile": "relics/bookmark.png"
+  },
+  {
+    "name": "Booming Conch",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of [gold]Elite[/gold] combats, draw [blue]2[/blue] additional cards.",
+    "imageFile": "relics/booming_conch.png"
+  },
+  {
+    "name": "Bound Phylactery",
+    "rarity": "Starter",
+    "character": "Necrobinder",
+    "description": "At the start of your turn, [gold]Summon[/gold] [blue]1[/blue].",
+    "imageFile": "relics/bound_phylactery.png"
+  },
+  {
+    "name": "Bowler Hat",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Gain [blue]25%[/blue] additional [gold]Gold[/gold].",
+    "imageFile": "relics/bowler_hat.png"
+  },
+  {
+    "name": "Bread",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "At the start of your first turn, lose [energy:2]. At the start of all other turns, gain [energy:1].",
+    "imageFile": "relics/bread.png"
+  },
+  {
+    "name": "Brilliant Scarf",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "The [blue]5th[/blue] card you play each turn is free.",
+    "imageFile": "relics/brilliant_scarf.png"
+  },
+  {
+    "name": "Brimstone",
+    "rarity": "Shop",
+    "character": "Ironclad",
+    "description": "At the start of your turn, gain [blue]2[/blue] [gold]Strength[/gold] and ALL enemies gain [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/brimstone.png"
+  },
+  {
+    "name": "Bronze Scales",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Start each combat with [blue]3[/blue] [gold]Thorns[/gold].",
+    "imageFile": "relics/bronze_scales.png"
+  },
+  {
+    "name": "Burning Blood",
+    "rarity": "Starter",
+    "character": "Ironclad",
+    "description": "At the end of combat, heal [green]6[/green] HP.",
+    "imageFile": "relics/burning_blood.png"
+  },
+  {
+    "name": "Burning Sticks",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "The first time each combat you [gold]Exhaust[/gold] a Skill, add a copy of it into your [gold]Hand[/gold].",
+    "imageFile": "relics/burning_sticks.png"
+  },
+  {
+    "name": "Byrdpip",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Upon pickup, gain the card [gold]Byrd Swoop[/gold]. A [gold]Byrdpip[/gold] will accompany you in battles.",
+    "imageFile": "relics/byrdpip.png"
+  },
+  {
+    "name": "Calling Bell",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain a unique [red]Curse[/red] and [blue]3[/blue] [gold]Relics[/gold].",
+    "imageFile": "relics/calling_bell.png"
+  },
+  {
+    "name": "Candelabra",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of your [blue]2nd[/blue] turn, gain [energy:2].",
+    "imageFile": "relics/candelabra.png"
+  },
+  {
+    "name": "Captain's Wheel",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the start of your [blue]3rd[/blue] turn, gain [blue]18[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/captains_wheel.png"
+  },
+  {
+    "name": "Cauldron",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, brews [blue]5[/blue] random potions.",
+    "imageFile": "relics/cauldron.png"
+  },
+  {
+    "name": "Centennial Puzzle",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "The first time you lose HP each combat, draw [blue]3[/blue] cards.",
+    "imageFile": "relics/centennial_puzzle.png"
+  },
+  {
+    "name": "Chandelier",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the start of your [blue]3rd[/blue] turn, gain [energy:3].",
+    "imageFile": "relics/chandelier.png"
+  },
+  {
+    "name": "Charon's Ashes",
+    "rarity": "Rare",
+    "character": "Ironclad",
+    "description": "Whenever you [gold]Exhaust[/gold] a card, deal [blue]3[/blue] damage to ALL enemies.",
+    "imageFile": "relics/charons_ashes.png"
+  },
+  {
+    "name": "Chemical X",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "The effects of your cost [blue]X[/blue] cards are increased by [blue]2[/blue].",
+    "imageFile": "relics/chemical_x.png"
+  },
+  {
+    "name": "Choices Paradox",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of each combat, add [blue]1[/blue] of [blue]5[/blue] random cards into your [gold]Hand[/gold]. Add [gold]Retain[/gold] to the chosen card.",
+    "imageFile": "relics/choices_paradox.png"
+  },
+  {
+    "name": "Circlet",
+    "rarity": "None",
+    "character": "Any",
+    "description": "It's a circlet.",
+    "imageFile": "relics/circlet.png"
+  },
+  {
+    "name": "Claws",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Transform[/gold] up to [blue]6[/blue] cards into [gold]Maul[/gold].",
+    "imageFile": "relics/claws.png"
+  },
+  {
+    "name": "Cloak Clasp",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the end of your turn, gain [blue]1[/blue] [gold]Block[/gold] for each card in your [gold]Hand[/gold].",
+    "imageFile": "relics/cloak_clasp.png"
+  },
+  {
+    "name": "Cracked Core",
+    "rarity": "Starter",
+    "character": "Defect",
+    "description": "At the start of each combat, [gold]Channel[/gold] [blue]1[/blue] [gold]Lightning[/gold].",
+    "imageFile": "relics/cracked_core.png"
+  },
+  {
+    "name": "Crossbow",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, add a random [gold]Attack[/gold] into your [gold]Hand[/gold]. It's free to play this turn.",
+    "imageFile": "relics/crossbow.png"
+  },
+  {
+    "name": "Cursed Pearl",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, receive [red]Greed[/red]. Gain [blue]333[/blue] [gold]Gold[/gold].",
+    "imageFile": "relics/cursed_pearl.png"
+  },
+  {
+    "name": "Darkstone Periapt",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you obtain a [red]Curse[/red], raise your Max HP by [blue]6[/blue].",
+    "imageFile": "relics/darkstone_periapt.png"
+  },
+  {
+    "name": "Data Disk",
+    "rarity": "Common",
+    "character": "Defect",
+    "description": "Start each combat with [blue]1[/blue] [gold]Focus[/gold].",
+    "imageFile": "relics/data_disk.png"
+  },
+  {
+    "name": "Daughter of the Wind",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you play an Attack, gain [blue]1[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/daughter_of_the_wind.png"
+  },
+  {
+    "name": "Delicate Frond",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of each combat, fill all empty potion slots with random potions.",
+    "imageFile": "relics/delicate_frond.png"
+  },
+  {
+    "name": "Demon Tongue",
+    "rarity": "Rare",
+    "character": "Ironclad",
+    "description": "The first time you lose HP on your turn, heal HP equal to the amount lost.",
+    "imageFile": "relics/demon_tongue.png"
+  },
+  {
+    "name": "Diamond Diadem",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Whenever you play [blue]2[/blue] or fewer cards in a turn, take half damage from enemies.",
+    "imageFile": "relics/diamond_diadem.png"
+  },
+  {
+    "name": "Dingy Rug",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Card rewards can now contain Colorless cards.",
+    "imageFile": "relics/dingy_rug.png"
+  },
+  {
+    "name": "Distinguished Cape",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, lose [blue]9[/blue] Max HP. Add [blue]3[/blue] [gold]Apparitions[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/distinguished_cape.png"
+  },
+  {
+    "name": "Divine Destiny",
+    "rarity": "Starter",
+    "character": "Regent",
+    "description": "At the start of each combat, gain [star:6].",
+    "imageFile": "relics/divine_destiny.png"
+  },
+  {
+    "name": "Divine Right",
+    "rarity": "Starter",
+    "character": "Regent",
+    "description": "At the start of each combat, gain [star:3].",
+    "imageFile": "relics/divine_right.png"
+  },
+  {
+    "name": "Dolly's Mirror",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, obtain an additional copy of a card in your [gold]Deck[/gold].",
+    "imageFile": "relics/dollys_mirror.png"
+  },
+  {
+    "name": "Dragon Fruit",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Whenever you gain [gold]Gold[/gold], raise your Max HP by [blue]1[/blue].",
+    "imageFile": "relics/dragon_fruit.png"
+  },
+  {
+    "name": "Dream Catcher",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you [gold]Rest[/gold], you may add a card to your [gold]Deck[/gold].",
+    "imageFile": "relics/dream_catcher.png"
+  },
+  {
+    "name": "Driftwood",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "You may reroll each card reward once.",
+    "imageFile": "relics/driftwood.png"
+  },
+  {
+    "name": "Dusty Tome",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain an [gold]Ancient Card[/gold].",
+    "imageFile": "relics/dusty_tome.png"
+  },
+  {
+    "name": "Ectoplasm",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "You can no longer gain [gold]Gold[/gold]. Gain [energy:1] at the start of each turn.",
+    "imageFile": "relics/ectoplasm.png"
+  },
+  {
+    "name": "Electric Shrymp",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] a Skill with [purple]Imbued[/purple].",
+    "imageFile": "relics/electric_shrymp.png"
+  },
+  {
+    "name": "Ember Tea",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of the next [blue]2[/blue] combats, gain [blue]2[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/ember_tea.png"
+  },
+  {
+    "name": "Emotion Chip",
+    "rarity": "Rare",
+    "character": "Defect",
+    "description": "If you lost HP during the previous turn, trigger the passive ability of all Orbs at the start of your turn.",
+    "imageFile": "relics/emotion_chip.png"
+  },
+  {
+    "name": "Empty Cage",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]2[/blue] cards from your [gold]Deck[/gold].",
+    "imageFile": "relics/empty_cage.png"
+  },
+  {
+    "name": "Eternal Feather",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "For every [blue]5[/blue] cards in your [gold]Deck[/gold], heal [green]3[/green] HP whenever you enter a [gold]Rest Site[/gold].",
+    "imageFile": "relics/eternal_feather.png"
+  },
+  {
+    "name": "Fencing Manual",
+    "rarity": "Common",
+    "character": "Regent",
+    "description": "At the start of each combat, [gold]Forge[/gold] [blue]10[/blue].",
+    "imageFile": "relics/fencing_manual.png"
+  },
+  {
+    "name": "Festive Popper",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, deal [blue]9[/blue] damage to ALL enemies.",
+    "imageFile": "relics/festive_popper.png"
+  },
+  {
+    "name": "Fiddle",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of each turn, draw [blue]2[/blue] additional cards. You may not draw cards during your turn.",
+    "imageFile": "relics/fiddle.png"
+  },
+  {
+    "name": "Forgotten Soul",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you [gold]Exhaust[/gold] a card, deal [blue]1[/blue] damage to a random enemy.",
+    "imageFile": "relics/forgotten_soul.png"
+  },
+  {
+    "name": "Fragrant Mushroom",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Upon pickup, lose [blue]15[/blue] HP and [gold]Upgrade[/gold] [blue]2[/blue] random cards.",
+    "imageFile": "relics/fragrant_mushroom.png"
+  },
+  {
+    "name": "Fresnel Lens",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you add a card that gains [gold]Block[/gold] to your [gold]Deck[/gold], [gold]Enchant[/gold] it with [purple]Nimble[/purple] [blue]2[/blue].",
+    "imageFile": "relics/fresnel_lens.png"
+  },
+  {
+    "name": "Frozen Egg",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you add a Power into your [gold]Deck[/gold], [gold]Upgrade[/gold] it.",
+    "imageFile": "relics/frozen_egg.png"
+  },
+  {
+    "name": "Funerary Mask",
+    "rarity": "Uncommon",
+    "character": "Necrobinder",
+    "description": "At the start of each combat, add [blue]3[/blue] [gold]Souls[/gold] into your [gold]Draw Pile[/gold].",
+    "imageFile": "relics/funerary_mask.png"
+  },
+  {
+    "name": "Fur Coat",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, mark [blue]7[/blue] random combats. Enemies in those rooms have [blue]1[/blue] HP.",
+    "imageFile": "relics/fur_coat.png"
+  },
+  {
+    "name": "Galactic Dust",
+    "rarity": "Uncommon",
+    "character": "Regent",
+    "description": "For every [blue]10[/blue] [star:1] spent, gain [blue]10[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/galactic_dust.png"
+  },
+  {
+    "name": "Gambling Chip",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the start of each combat, discard any number of cards then draw that many.",
+    "imageFile": "relics/gambling_chip.png"
+  },
+  {
+    "name": "Game Piece",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you play a Power, draw [blue]1[/blue] card.",
+    "imageFile": "relics/game_piece.png"
+  },
+  {
+    "name": "Ghost Seed",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "[gold]Strikes[/gold] and [gold]Defends[/gold] gain [gold]Ethereal[/gold].",
+    "imageFile": "relics/ghost_seed.png"
+  },
+  {
+    "name": "Girya",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "You can now gain [gold]Strength[/gold] at [gold]Rest Sites[/gold]. ([blue]3[/blue] times max)",
+    "imageFile": "relics/girya.png"
+  },
+  {
+    "name": "Glass Eye",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain [blue]2[/blue] [gold]Common[/gold] cards, [blue]2[/blue] [gold]Uncommon[/gold] cards, and [blue]1[/blue] [gold]Rare[/gold] card.",
+    "imageFile": "relics/glass_eye.png"
+  },
+  {
+    "name": "Glitter",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "[gold]Enchant[/gold] all card rewards with [purple]Glam[/purple].",
+    "imageFile": "relics/glitter.png"
+  },
+  {
+    "name": "Gnarled Hammer",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] up to [blue]3[/blue] Attacks with [purple]Sharp[/purple] [blue]3[/blue].",
+    "imageFile": "relics/gnarled_hammer.png"
+  },
+  {
+    "name": "Gold-Plated Cables",
+    "rarity": "Uncommon",
+    "character": "Defect",
+    "description": "Your rightmost Orb triggers its passive an additional time.",
+    "imageFile": "relics/gold_plated_cables.png"
+  },
+  {
+    "name": "Golden Compass",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, replace the [gold]Act[/gold] [blue]2[/blue] Map with a single special path.",
+    "imageFile": "relics/golden_compass.png"
+  },
+  {
+    "name": "Golden Pearl",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]150[/blue] [gold]Gold[/gold].",
+    "imageFile": "relics/golden_pearl.png"
+  },
+  {
+    "name": "Gorget",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, gain [blue]4[/blue] [gold]Plating[/gold].",
+    "imageFile": "relics/gorget.png"
+  },
+  {
+    "name": "Gremlin Horn",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Whenever an enemy dies, gain [energy:1] and draw [blue]1[/blue] card.",
+    "imageFile": "relics/gremlin_horn.png"
+  },
+  {
+    "name": "Hand Drill",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you break an enemy's [gold]Block[/gold], apply [blue]2[/blue] [gold]Vulnerable[/gold].",
+    "imageFile": "relics/hand_drill.png"
+  },
+  {
+    "name": "Happy Flower",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Every [blue]3[/blue] turns, gain [energy:1].",
+    "imageFile": "relics/happy_flower.png"
+  },
+  {
+    "name": "Happy Flower???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Every [blue]5[/blue] turns, gain [energy:1].",
+    "imageFile": "relics/fake_happy_flower.png"
+  },
+  {
+    "name": "Hefty Tablet",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, choose [blue]1[/blue] of [blue]3[/blue] Rare cards to add to your [gold]Deck[/gold], and add [blue]1[/blue] [red]Injury[/red] to your [gold]Deck[/gold].",
+    "imageFile": "relics/hefty_tablet.png"
+  },
+  {
+    "name": "Helical Dart",
+    "rarity": "Rare",
+    "character": "Silent",
+    "description": "Whenever you play a [gold]Shiv[/gold], gain [blue]1[/blue] [gold]Dexterity[/gold] this turn.",
+    "imageFile": "relics/helical_dart.png"
+  },
+  {
+    "name": "History Course",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of your turn, play a copy of your last played Attack or Skill.",
+    "imageFile": "relics/history_course.png"
+  },
+  {
+    "name": "Horn Cleat",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of your [blue]2nd[/blue] turn, gain [blue]14[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/horn_cleat.png"
+  },
+  {
+    "name": "Ice Cream",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Energy is now conserved between turns.",
+    "imageFile": "relics/ice_cream.png"
+  },
+  {
+    "name": "Infused Core",
+    "rarity": "Starter",
+    "character": "Defect",
+    "description": "At the start of each combat, [gold]Channel[/gold] [blue]3[/blue] [gold]Lightning[/gold].",
+    "imageFile": "relics/infused_core.png"
+  },
+  {
+    "name": "Intimidating Helmet",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you play a card that costs [energy:2] or more, gain [blue]4[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/intimidating_helmet.png"
+  },
+  {
+    "name": "Iron Club",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Every [blue]4[/blue] cards you play, draw [blue]1[/blue] card.",
+    "imageFile": "relics/iron_club.png"
+  },
+  {
+    "name": "Ivory Tile",
+    "rarity": "Rare",
+    "character": "Necrobinder",
+    "description": "Whenever you play a card that costs [energy:3] or more, gain [energy:1].",
+    "imageFile": "relics/ivory_tile.png"
+  },
+  {
+    "name": "Jeweled Mask",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of combat put a random Power from your [gold]Draw Pile[/gold] into your [gold]Hand[/gold], it's free to play.",
+    "imageFile": "relics/jeweled_mask.png"
+  },
+  {
+    "name": "Jewelry Box",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]1[/blue] [gold]Apotheosis[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/jewelry_box.png"
+  },
+  {
+    "name": "Joss Paper",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every [blue]5[/blue] times you [gold]Exhaust[/gold] a card, draw [blue]1[/blue] card.",
+    "imageFile": "relics/joss_paper.png"
+  },
+  {
+    "name": "Juzu Bracelet",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Regular enemy combats are no longer encountered in [gold]?[/gold] rooms.",
+    "imageFile": "relics/juzu_bracelet.png"
+  },
+  {
+    "name": "Kifuda",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] up to [blue]3[/blue] cards with [purple]Adroit[/purple].",
+    "imageFile": "relics/kifuda.png"
+  },
+  {
+    "name": "Kunai",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Every time you play [blue]3[/blue] Attacks in a single turn, gain [blue]1[/blue] [gold]Dexterity[/gold].",
+    "imageFile": "relics/kunai.png"
+  },
+  {
+    "name": "Kusarigama",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every time you play [blue]3[/blue] Attacks in a single turn, deal [blue]6[/blue] damage to a random enemy.",
+    "imageFile": "relics/kusarigama.png"
+  },
+  {
+    "name": "Lantern",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Start each combat with an additional [energy:1].",
+    "imageFile": "relics/lantern.png"
+  },
+  {
+    "name": "Large Capsule",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain [blue]2[/blue] random [gold]Relics[/gold]. Add an additional [gold]Strike[/gold] and [gold]Defend[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/large_capsule.png"
+  },
+  {
+    "name": "Lasting Candy",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every other combat, your card rewards gain an additional Power.",
+    "imageFile": "relics/lasting_candy.png"
+  },
+  {
+    "name": "Lava Lamp",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "At the end of combat, [gold]Upgrade[/gold] all card rewards if you took no damage.",
+    "imageFile": "relics/lava_lamp.png"
+  },
+  {
+    "name": "Lava Rock",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "The Act 1 Boss drops [blue]2[/blue] [gold]Relics[/gold].",
+    "imageFile": "relics/lava_rock.png"
+  },
+  {
+    "name": "Lead Paperweight",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, choose [blue]1[/blue] of [blue]2[/blue] Colorless cards to add to your [gold]Deck[/gold].",
+    "imageFile": "relics/lead_paperweight.png"
+  },
+  {
+    "name": "Leafy Poultice",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Transform[/gold] [blue]1[/blue] of your [gold]Strikes[/gold] and [blue]1[/blue] of your [gold]Defends[/gold] and lose [blue]12[/blue] Max HP.",
+    "imageFile": "relics/leafy_poultice.png"
+  },
+  {
+    "name": "Lee's Waffle",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]7[/blue] and heal all of your HP.",
+    "imageFile": "relics/lees_waffle.png"
+  },
+  {
+    "name": "Lee's Waffle???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Upon pickup, heal [green]10%[/green] of your HP.",
+    "imageFile": "relics/fake_lees_waffle.png"
+  },
+  {
+    "name": "Letter Opener",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every time you play [blue]3[/blue] Skills in a single turn, deal [blue]5[/blue] damage to ALL enemies.",
+    "imageFile": "relics/letter_opener.png"
+  },
+  {
+    "name": "Lizard Tail",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "When your HP would be reduced to [blue]0[/blue], heal to [green]50%[/green] of your Max HP instead (works once).",
+    "imageFile": "relics/lizard_tail.png"
+  },
+  {
+    "name": "Looming Fruit",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]31[/blue].",
+    "imageFile": "relics/looming_fruit.png"
+  },
+  {
+    "name": "Lord's Parasol",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "When you encounter the [gold]Merchant[/gold], immediately obtain EVERYTHING he sells.",
+    "imageFile": "relics/lords_parasol.png"
+  },
+  {
+    "name": "Lost Coffer",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]1[/blue] card reward and procure [blue]1[/blue] random potion.",
+    "imageFile": "relics/lost_coffer.png"
+  },
+  {
+    "name": "Lost Wisp",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you play a [gold]Power[/gold], deal [blue]8[/blue] damage to ALL enemies.",
+    "imageFile": "relics/lost_wisp.png"
+  },
+  {
+    "name": "Lucky Fysh",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Whenever you add a card to your [gold]Deck[/gold], gain [blue]15[/blue] [gold]Gold[/gold].",
+    "imageFile": "relics/lucky_fysh.png"
+  },
+  {
+    "name": "Lunar Pastry",
+    "rarity": "Rare",
+    "character": "Regent",
+    "description": "At the end of your turn, gain [star:1].",
+    "imageFile": "relics/lunar_pastry.png"
+  },
+  {
+    "name": "Mango",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]14[/blue].",
+    "imageFile": "relics/mango.png"
+  },
+  {
+    "name": "Mango???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]3[/blue].",
+    "imageFile": "relics/fake_mango.png"
+  },
+  {
+    "name": "Massive Scroll",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, choose [blue]1[/blue] of [blue]3[/blue] [gold]Multiplayer Cards[/gold] to add to your [gold]Deck[/gold].",
+    "imageFile": "relics/massive_scroll.png"
+  },
+  {
+    "name": "Maw Bank",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you climb a floor, gain [blue]12[/blue] [gold]Gold[/gold]. No longer works when you spend any [gold]Gold[/gold] at the shop.",
+    "imageFile": "relics/maw_bank.png"
+  },
+  {
+    "name": "Meal Ticket",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Whenever you enter a shop room, heal [green]15[/green] HP.",
+    "imageFile": "relics/meal_ticket.png"
+  },
+  {
+    "name": "Meat Cleaver",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "You may [gold]Cook[/gold] at Rest Sites.",
+    "imageFile": "relics/meat_cleaver.png"
+  },
+  {
+    "name": "Meat on the Bone",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "If your HP is at or below [blue]50%[/blue] at the end of combat, heal [green]12[/green] HP.",
+    "imageFile": "relics/meat_on_the_bone.png"
+  },
+  {
+    "name": "Membership Card",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "[blue]50%[/blue] discount on all products!",
+    "imageFile": "relics/membership_card.png"
+  },
+  {
+    "name": "Mercury Hourglass",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of your turn, deal [blue]3[/blue] damage to ALL enemies.",
+    "imageFile": "relics/mercury_hourglass.png"
+  },
+  {
+    "name": "Metronome",
+    "rarity": "Rare",
+    "character": "Defect",
+    "description": "The first time you [gold]Channel[/gold] [blue]7[/blue] [gold]Orbs[/gold] each combat, deal [blue]30[/blue] damage to ALL enemies.",
+    "imageFile": "relics/metronome.png"
+  },
+  {
+    "name": "Mini Regent",
+    "rarity": "Rare",
+    "character": "Regent",
+    "description": "The first time you spend [star:1] each turn, gain [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/mini_regent.png"
+  },
+  {
+    "name": "Miniature Cannon",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "[gold]Upgraded[/gold] Attacks deal [blue]3[/blue] additional damage.",
+    "imageFile": "relics/miniature_cannon.png"
+  },
+  {
+    "name": "Miniature Tent",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "You may choose any number of options at [gold]Rest Sites[/gold].",
+    "imageFile": "relics/miniature_tent.png"
+  },
+  {
+    "name": "Molten Egg",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you add an Attack card to your [gold]Deck[/gold], [gold]Upgrade[/gold] it.",
+    "imageFile": "relics/molten_egg.png"
+  },
+  {
+    "name": "Mr. Struggles",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of your turn, deal damage equal to the turn number to ALL enemies.",
+    "imageFile": "relics/mr_struggles.png"
+  },
+  {
+    "name": "Mummified Hand",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you play a Power, a random card in your [gold]Hand[/gold] is free to play that turn.",
+    "imageFile": "relics/mummified_hand.png"
+  },
+  {
+    "name": "Music Box",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Create an [gold]Ethereal[/gold] copy of the first Attack you play each turn.",
+    "imageFile": "relics/music_box.png"
+  },
+  {
+    "name": "Mystic Lighter",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "[gold]Enchanted[/gold] Attacks deal [blue]9[/blue] additional damage.",
+    "imageFile": "relics/mystic_lighter.png"
+  },
+  {
+    "name": "Neow's Bones",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]2[/blue] random [gold]Neow Relics[/gold]. Add [blue]1[/blue] random [red]Curse[/red] to your [gold]Deck[/gold].",
+    "imageFile": "relics/neows_bones.png"
+  },
+  {
+    "name": "Neow's Talisman",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] [blue]1[/blue] of your [gold]Strikes[/gold] and [blue]1[/blue] of your [gold]Defends[/gold].",
+    "imageFile": "relics/neows_talisman.png"
+  },
+  {
+    "name": "Neow's Torment",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]1[/blue] [gold]Neow's Fury[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/neows_torment.png"
+  },
+  {
+    "name": "New Leaf",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Transform[/gold] [blue]1[/blue] card.",
+    "imageFile": "relics/new_leaf.png"
+  },
+  {
+    "name": "Ninja Scroll",
+    "rarity": "Shop",
+    "character": "Silent",
+    "description": "At the start of each combat, add [blue]3[/blue] [gold]Shivs[/gold] into your [gold]Hand[/gold].",
+    "imageFile": "relics/ninja_scroll.png"
+  },
+  {
+    "name": "Nunchaku",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every time you play [blue]10[/blue] Attacks, gain [energy:1].",
+    "imageFile": "relics/nunchaku.png"
+  },
+  {
+    "name": "Nutritious Oyster",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]11[/blue].",
+    "imageFile": "relics/nutritious_oyster.png"
+  },
+  {
+    "name": "Nutritious Soup",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] all [gold]Strikes[/gold] in your [gold]Deck[/gold] with [purple]Tezcatara's Ember[/purple].",
+    "imageFile": "relics/nutritious_soup.png"
+  },
+  {
+    "name": "Oddly Smooth Stone",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Start each combat with [blue]1[/blue] [gold]Dexterity[/gold].",
+    "imageFile": "relics/oddly_smooth_stone.png"
+  },
+  {
+    "name": "Old Coin",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]300[/blue] [gold]Gold[/gold].",
+    "imageFile": "relics/old_coin.png"
+  },
+  {
+    "name": "Orange Dough",
+    "rarity": "Rare",
+    "character": "Regent",
+    "description": "At the start of each combat, add [blue]2[/blue] random Colorless cards into your [gold]Hand[/gold].",
+    "imageFile": "relics/orange_dough.png"
+  },
+  {
+    "name": "Orichalcum",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "If you end your turn without [gold]Block[/gold], gain [blue]6[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/orichalcum.png"
+  },
+  {
+    "name": "Orichalcum???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "If you end your turn without [gold]Block[/gold], gain [blue]3[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/fake_orichalcum.png"
+  },
+  {
+    "name": "Ornamental Fan",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every time you play [blue]3[/blue] Attacks in a single turn, gain [blue]4[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/ornamental_fan.png"
+  },
+  {
+    "name": "Orrery",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]5[/blue] card rewards.",
+    "imageFile": "relics/orrery.png"
+  },
+  {
+    "name": "Pael's Blood",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, draw [blue]1[/blue] additional card.",
+    "imageFile": "relics/paels_blood.png"
+  },
+  {
+    "name": "Pael's Claw",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] all [gold]Defends[/gold] with [purple]Goopy[/purple].",
+    "imageFile": "relics/paels_claw.png"
+  },
+  {
+    "name": "Pael's Eye",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "The first time each combat you end your turn without playing cards, [gold]Exhaust[/gold] your [gold]Hand[/gold], and take an extra turn.",
+    "imageFile": "relics/paels_eye.png"
+  },
+  {
+    "name": "Pael's Flesh",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain an additional [energy:1] at the start of your [blue]3rd[/blue] turn, and every turn after that.",
+    "imageFile": "relics/paels_flesh.png"
+  },
+  {
+    "name": "Pael's Growth",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] a card with [purple]Clone[/purple].",
+    "imageFile": "relics/paels_growth.png"
+  },
+  {
+    "name": "Pael's Horn",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]2[/blue] [gold]Relax[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/paels_horn.png"
+  },
+  {
+    "name": "Pael's Legion",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Doubles [gold]Block[/gold] gained from a card, then goes to sleep for [blue]2[/blue] turns.",
+    "imageFile": "relics/paels_legion.png"
+  },
+  {
+    "name": "Pael's Tears",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "If you end your turn with unspent [energy:1], gain an additional [energy:2] next turn.",
+    "imageFile": "relics/paels_tears.png"
+  },
+  {
+    "name": "Pael's Tooth",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]5[/blue] cards from your [gold]Deck[/gold]. After each combat, randomly add [blue]1[/blue] back [gold]Upgraded[/gold].",
+    "imageFile": "relics/paels_tooth.png"
+  },
+  {
+    "name": "Pael's Wing",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "You may sacrifice card rewards to Pael. Every [blue]2[/blue] sacrifices, obtain a [gold]Relic[/gold].",
+    "imageFile": "relics/paels_wing.png"
+  },
+  {
+    "name": "Pandora's Box",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "[gold]Transform[/gold] ALL [gold]Strikes[/gold] and [gold]Defends[/gold].",
+    "imageFile": "relics/pandoras_box.png"
+  },
+  {
+    "name": "Pantograph",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of each [gold]Boss[/gold] combat, heal [green]25[/green] HP.",
+    "imageFile": "relics/pantograph.png"
+  },
+  {
+    "name": "Paper Krane",
+    "rarity": "Rare",
+    "character": "Silent",
+    "description": "Enemies with [gold]Weak[/gold] deal [blue]40%[/blue] less damage to you rather than [blue]25%[/blue].",
+    "imageFile": "relics/paper_krane.png"
+  },
+  {
+    "name": "Paper Phrog",
+    "rarity": "Uncommon",
+    "character": "Ironclad",
+    "description": "Enemies with [gold]Vulnerable[/gold] take [blue]75%[/blue] more damage rather than [blue]50%[/blue].",
+    "imageFile": "relics/paper_phrog.png"
+  },
+  {
+    "name": "Parrying Shield",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "If you end a turn with at least [blue]10[/blue] [gold]Block[/gold], deal [blue]6[/blue] damage to a random enemy.",
+    "imageFile": "relics/parrying_shield.png"
+  },
+  {
+    "name": "Pear",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]10[/blue].",
+    "imageFile": "relics/pear.png"
+  },
+  {
+    "name": "Pen Nib",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every [blue]10th[/blue] Attack you play deals double damage.",
+    "imageFile": "relics/pen_nib.png"
+  },
+  {
+    "name": "Pendulum",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Every [blue]3[/blue] turns, draw [blue]1[/blue] card.",
+    "imageFile": "relics/pendulum.png"
+  },
+  {
+    "name": "Permafrost",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "The first time you play a Power each combat, gain [blue]7[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/permafrost.png"
+  },
+  {
+    "name": "Petrified Toad",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of each combat, procure a [gold]Potion-Shaped Rock[/gold].",
+    "imageFile": "relics/petrified_toad.png"
+  },
+  {
+    "name": "Phial Holster",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]1[/blue] potion slot and procure [blue]2[/blue] random potions.",
+    "imageFile": "relics/phial_holster.png"
+  },
+  {
+    "name": "Philosopher's Stone",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. ALL enemies start combat with [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/philosophers_stone.png"
+  },
+  {
+    "name": "Phylactery Unbound",
+    "rarity": "Starter",
+    "character": "Necrobinder",
+    "description": "At the start of each combat, [gold]Summon[/gold] [blue]5[/blue]. At the start of your turn, [gold]Summon[/gold] [blue]2[/blue].",
+    "imageFile": "relics/phylactery_unbound.png"
+  },
+  {
+    "name": "Planisphere",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Whenever you enter a [gold]?[/gold] room, heal [green]5[/green] HP.",
+    "imageFile": "relics/planisphere.png"
+  },
+  {
+    "name": "Pocketwatch",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you play [blue]3[/blue] or fewer cards during your turn, draw [blue]3[/blue] additional cards at the start of your next turn.",
+    "imageFile": "relics/pocketwatch.png"
+  },
+  {
+    "name": "Pollinous Core",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Every [blue]4[/blue] turns, draw [blue]2[/blue] additional cards.",
+    "imageFile": "relics/pollinous_core.png"
+  },
+  {
+    "name": "Pomander",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] a card.",
+    "imageFile": "relics/pomander.png"
+  },
+  {
+    "name": "Potion Belt",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]2[/blue] potion slots.",
+    "imageFile": "relics/potion_belt.png"
+  },
+  {
+    "name": "Power Cell",
+    "rarity": "Rare",
+    "character": "Defect",
+    "description": "At the start of each combat, add [blue]2[/blue] zero-cost cards from your [gold]Draw Pile[/gold] into your [gold]Hand[/gold].",
+    "imageFile": "relics/power_cell.png"
+  },
+  {
+    "name": "Prayer Wheel",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Normal enemies drop an additional card reward.",
+    "imageFile": "relics/prayer_wheel.png"
+  },
+  {
+    "name": "Precarious Shears",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]2[/blue] cards from your [gold]Deck[/gold] and lose [blue]16[/blue] HP.",
+    "imageFile": "relics/precarious_shears.png"
+  },
+  {
+    "name": "Precise Scissors",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]1[/blue] card from your [gold]Deck[/gold].",
+    "imageFile": "relics/precise_scissors.png"
+  },
+  {
+    "name": "Preserved Fog",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, remove [blue]3[/blue] cards from your [gold]Deck[/gold]. Add [red]Folly[/red] to your [gold]Deck[/gold].",
+    "imageFile": "relics/preserved_fog.png"
+  },
+  {
+    "name": "Prismatic Gem",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. Card rewards now contain cards from other colors.",
+    "imageFile": "relics/prismatic_gem.png"
+  },
+  {
+    "name": "Pumpkin Candle",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. Extinguishes at the start of [gold]Act[/gold] [blue]3[/blue].",
+    "imageFile": "relics/pumpkin_candle.png"
+  },
+  {
+    "name": "Punch Dagger",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Enchant[/gold] an Attack with [purple]Momentum[/purple] [blue]5[/blue].",
+    "imageFile": "relics/punch_dagger.png"
+  },
+  {
+    "name": "Radiant Pearl",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of each combat, add [blue]1[/blue] [gold]Luminesce[/gold] into your [gold]Hand[/gold].",
+    "imageFile": "relics/radiant_pearl.png"
+  },
+  {
+    "name": "Rainbow Ring",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "The first time you play an Attack, Skill, and Power each turn, gain [blue]1[/blue] [gold]Strength[/gold] and [blue]1[/blue] [gold]Dexterity[/gold].",
+    "imageFile": "relics/rainbow_ring.png"
+  },
+  {
+    "name": "Razor Tooth",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Every time you play an Attack or Skill, [gold]Upgrade[/gold] it for the remainder of combat.",
+    "imageFile": "relics/razor_tooth.png"
+  },
+  {
+    "name": "Red Mask",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "At the start of each combat, apply [blue]1[/blue] [gold]Weak[/gold] to ALL enemies.",
+    "imageFile": "relics/red_mask.png"
+  },
+  {
+    "name": "Red Skull",
+    "rarity": "Common",
+    "character": "Ironclad",
+    "description": "While your HP is at or below [blue]50%[/blue], you have [blue]3[/blue] additional [gold]Strength[/gold].",
+    "imageFile": "relics/red_skull.png"
+  },
+  {
+    "name": "Regal Pillow",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Whenever you [gold]Rest[/gold], heal an additional [blue]15[/blue] HP.",
+    "imageFile": "relics/regal_pillow.png"
+  },
+  {
+    "name": "Regalite",
+    "rarity": "Uncommon",
+    "character": "Regent",
+    "description": "Whenever you create a card, gain [blue]2[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/regalite.png"
+  },
+  {
+    "name": "Reptile Trinket",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Whenever you use a potion, gain [blue]3[/blue] [gold]Strength[/gold] this turn.",
+    "imageFile": "relics/reptile_trinket.png"
+  },
+  {
+    "name": "Ring of the Drake",
+    "rarity": "Starter",
+    "character": "Silent",
+    "description": "At the start of your first [blue]3[/blue] turns, draw [blue]2[/blue] additional cards.",
+    "imageFile": "relics/ring_of_the_drake.png"
+  },
+  {
+    "name": "Ring of the Snake",
+    "rarity": "Starter",
+    "character": "Silent",
+    "description": "At the start of each combat, draw [blue]2[/blue] additional cards.",
+    "imageFile": "relics/ring_of_the_snake.png"
+  },
+  {
+    "name": "Ringing Triangle",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "[gold]Retain[/gold] your [gold]Hand[/gold] on the first turn of combat.",
+    "imageFile": "relics/ringing_triangle.png"
+  },
+  {
+    "name": "Ripple Basin",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "If you did not play any Attacks during your turn, gain [blue]4[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/ripple_basin.png"
+  },
+  {
+    "name": "Royal Poison",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of each combat, lose [blue]4[/blue] HP.",
+    "imageFile": "relics/royal_poison.png"
+  },
+  {
+    "name": "Royal Stamp",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Upon pickup, choose an Attack or Skill in your [gold]Deck[/gold] to [gold]Enchant[/gold] with [purple]Royally Approved[/purple].",
+    "imageFile": "relics/royal_stamp.png"
+  },
+  {
+    "name": "Ruined Helmet",
+    "rarity": "Rare",
+    "character": "Ironclad",
+    "description": "The first time you gain [gold]Strength[/gold] each combat, double the amount gained.",
+    "imageFile": "relics/ruined_helmet.png"
+  },
+  {
+    "name": "Runic Capacitor",
+    "rarity": "Shop",
+    "character": "Defect",
+    "description": "Start each combat with [blue]3[/blue] additional [gold]Orb Slots[/gold].",
+    "imageFile": "relics/runic_capacitor.png"
+  },
+  {
+    "name": "Runic Pyramid",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the end of your turn, you no longer discard your [gold]Hand[/gold].",
+    "imageFile": "relics/runic_pyramid.png"
+  },
+  {
+    "name": "Sai",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, gain [blue]7[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/sai.png"
+  },
+  {
+    "name": "Sand Castle",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] [blue]6[/blue] random cards.",
+    "imageFile": "relics/sand_castle.png"
+  },
+  {
+    "name": "Screaming Flagon",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "If you end your turn with no cards in your [gold]Hand[/gold], deal [blue]20[/blue] damage to ALL enemies.",
+    "imageFile": "relics/screaming_flagon.png"
+  },
+  {
+    "name": "Scroll Boxes",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, lose all [gold]Gold[/gold] and choose [blue]1[/blue] of [blue]2[/blue] packs of cards to add to your [gold]Deck[/gold].",
+    "imageFile": "relics/scroll_boxes.png"
+  },
+  {
+    "name": "Sea Glass",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "See [blue]15[/blue] cards from another character. Choose any number of them to add to your [gold]Deck[/gold].",
+    "imageFile": "relics/sea_glass.png"
+  },
+  {
+    "name": "Seal of Gold",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, spend [blue]5[/blue] [gold]Gold[/gold] to gain [energy:1].",
+    "imageFile": "relics/seal_of_gold.png"
+  },
+  {
+    "name": "Self-Forming Clay",
+    "rarity": "Uncommon",
+    "character": "Ironclad",
+    "description": "Whenever you lose HP in combat, gain [blue]3[/blue] [gold]Block[/gold] next turn.",
+    "imageFile": "relics/self_forming_clay.png"
+  },
+  {
+    "name": "Sere Talon",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]2[/blue] random [red]Curses[/red] and [blue]3[/blue] [purple]Wishes[/purple] to your [gold]Deck[/gold].",
+    "imageFile": "relics/sere_talon.png"
+  },
+  {
+    "name": "Shovel",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "You can now dig at [gold]Rest Sites[/gold] to obtain a random [gold]Relic[/gold].",
+    "imageFile": "relics/shovel.png"
+  },
+  {
+    "name": "Shuriken",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Every time you play [blue]3[/blue] Attacks in a single turn, gain [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/shuriken.png"
+  },
+  {
+    "name": "Signet Ring",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, gain [blue]999[/blue] [gold]Gold[/gold].",
+    "imageFile": "relics/signet_ring.png"
+  },
+  {
+    "name": "Silver Crucible",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "The first [blue]3[/blue] card rewards you see are [gold]Upgraded[/gold]. The first Treasure Chest you open is [red]empty[/red].",
+    "imageFile": "relics/silver_crucible.png"
+  },
+  {
+    "name": "Sling of Courage",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Start each [gold]Elite[/gold] combat with [blue]2[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/sling_of_courage.png"
+  },
+  {
+    "name": "Small Capsule",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain a random [gold]Relic[/gold].",
+    "imageFile": "relics/small_capsule.png"
+  },
+  {
+    "name": "Snecko Eye",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, draw [blue]2[/blue] additional cards. Start each combat [red]Confused[/red].",
+    "imageFile": "relics/snecko_eye.png"
+  },
+  {
+    "name": "Snecko Eye???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Start each combat [red]Confused[/red].",
+    "imageFile": "relics/fake_snecko_eye.png"
+  },
+  {
+    "name": "Snecko Skull",
+    "rarity": "Common",
+    "character": "Silent",
+    "description": "Whenever you apply [gold]Poison[/gold], apply an additional [blue]1[/blue] [gold]Poison[/gold].",
+    "imageFile": "relics/snecko_skull.png"
+  },
+  {
+    "name": "Sozu",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. You can no longer obtain potions.",
+    "imageFile": "relics/sozu.png"
+  },
+  {
+    "name": "Sparkling Rouge",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of your [blue]3rd[/blue] turn, gain [blue]1[/blue] [gold]Strength[/gold] and [blue]1[/blue] [gold]Dexterity[/gold].",
+    "imageFile": "relics/sparkling_rouge.png"
+  },
+  {
+    "name": "Spiked Gauntlets",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. Powers cost [blue]1[/blue] more [energy:1].",
+    "imageFile": "relics/spiked_gauntlets.png"
+  },
+  {
+    "name": "Stone Calendar",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the end of turn [blue]7[/blue], deal [blue]52[/blue] damage to ALL enemies.",
+    "imageFile": "relics/stone_calendar.png"
+  },
+  {
+    "name": "Stone Cracker",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "At the start of each combat, [gold]Upgrade[/gold] [blue]2[/blue] random cards in your [gold]Draw Pile[/gold] for the rest of combat.",
+    "imageFile": "relics/stone_cracker.png"
+  },
+  {
+    "name": "Stone Humidifier",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Whenever you [gold]Rest[/gold] at a [gold]Rest Site[/gold], raise your Max HP by [blue]5[/blue].",
+    "imageFile": "relics/stone_humidifier.png"
+  },
+  {
+    "name": "Storybook",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]1[/blue] [gold]Brightest Flame[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/storybook.png"
+  },
+  {
+    "name": "Strawberry",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Upon pickup, raise your Max HP by [blue]7[/blue].",
+    "imageFile": "relics/strawberry.png"
+  },
+  {
+    "name": "Strike Dummy",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Cards containing “Strike” deal [blue]3[/blue] additional damage.",
+    "imageFile": "relics/strike_dummy.png"
+  },
+  {
+    "name": "Strike Dummy???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Cards containing “Strike” deal [blue]1[/blue] additional damage.",
+    "imageFile": "relics/fake_strike_dummy.png"
+  },
+  {
+    "name": "Sturdy Clamp",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Up to [blue]10[/blue] [gold]Block[/gold] persists across turns.",
+    "imageFile": "relics/sturdy_clamp.png"
+  },
+  {
+    "name": "Sword of Jade",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Start each combat with [blue]3[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/sword_of_jade.png"
+  },
+  {
+    "name": "Sword of Stone",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Transforms into a powerful [gold]Relic[/gold] after defeating [blue]5[/blue] [gold]Elites[/gold].",
+    "imageFile": "relics/sword_of_stone.png"
+  },
+  {
+    "name": "Symbiotic Virus",
+    "rarity": "Uncommon",
+    "character": "Defect",
+    "description": "At the start of each combat, [gold]Channel[/gold] [blue]1[/blue] [gold]Dark[/gold].",
+    "imageFile": "relics/symbiotic_virus.png"
+  },
+  {
+    "name": "Tanx's Whistle",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, add [blue]1[/blue] [gold]Whistle[/gold] to your [gold]Deck[/gold].",
+    "imageFile": "relics/tanxs_whistle.png"
+  },
+  {
+    "name": "Tea of Discourtesy",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the start of the next combat, shuffle [blue]2[/blue] [gold]Dazed[/gold] into your [gold]Draw Pile[/gold].",
+    "imageFile": "relics/tea_of_discourtesy.png"
+  },
+  {
+    "name": "The Abacus",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "Whenever you shuffle your [gold]Draw Pile[/gold], gain [blue]6[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/the_abacus.png"
+  },
+  {
+    "name": "The Boot",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you would deal [blue]4[/blue] or less unblocked attack damage, increase it to [blue]5[/blue].",
+    "imageFile": "relics/the_boot.png"
+  },
+  {
+    "name": "The Chosen Cheese",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "At the end of combat, gain [blue]1[/blue] Max HP.",
+    "imageFile": "relics/chosen_cheese.png"
+  },
+  {
+    "name": "The Courier",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "The merchant no longer runs out of cards, relics, or potions and his prices are reduced by [blue]20%[/blue].",
+    "imageFile": "relics/the_courier.png"
+  },
+  {
+    "name": "The Merchant's Rug???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Poor imitation. Does nothing.",
+    "imageFile": "relics/fake_merchants_rug.png"
+  },
+  {
+    "name": "Throwing Axe",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "The first card you play each combat is played an extra time.",
+    "imageFile": "relics/throwing_axe.png"
+  },
+  {
+    "name": "Tingsha",
+    "rarity": "Uncommon",
+    "character": "Silent",
+    "description": "Whenever you discard a card during your turn, deal [blue]3[/blue] damage to a random enemy for each card discarded.",
+    "imageFile": "relics/tingsha.png"
+  },
+  {
+    "name": "Tiny Mailbox",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Whenever you [gold]Rest[/gold], procure [blue]2[/blue] random potions.",
+    "imageFile": "relics/tiny_mailbox.png"
+  },
+  {
+    "name": "Toasty Mittens",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "At the start of your turn, [gold]Exhaust[/gold] the top card of your [gold]Draw Pile[/gold] and gain [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/toasty_mittens.png"
+  },
+  {
+    "name": "Toolbox",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "At the start of each combat, choose [blue]1[/blue] of [blue]3[/blue] random Colorless cards and add the chosen card into your [gold]Hand[/gold].",
+    "imageFile": "relics/toolbox.png"
+  },
+  {
+    "name": "Touch of Orobas",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, replace your starter [gold]Relic[/gold] with an [gold]Ancient[/gold] version.",
+    "imageFile": "relics/touch_of_orobas.png"
+  },
+  {
+    "name": "Tough Bandages",
+    "rarity": "Rare",
+    "character": "Silent",
+    "description": "Whenever you discard a card during your turn, gain [blue]3[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/tough_bandages.png"
+  },
+  {
+    "name": "Toxic Egg",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you add a Skill into your [gold]Deck[/gold], [gold]Upgrade[/gold] it.",
+    "imageFile": "relics/toxic_egg.png"
+  },
+  {
+    "name": "Toy Box",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, obtain [blue]4[/blue] [gold]Wax Relics[/gold]. Every [blue]3[/blue] combats, your left-most [gold]Wax Relic[/gold] will melt away.",
+    "imageFile": "relics/toy_box.png"
+  },
+  {
+    "name": "Tri-Boomerang",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Choose [blue]3[/blue] Attacks in your [gold]Deck[/gold]. [gold]Enchant[/gold] them with [purple]Instinct[/purple].",
+    "imageFile": "relics/tri_boomerang.png"
+  },
+  {
+    "name": "Tungsten Rod",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you would lose HP, lose [blue]1[/blue] less.",
+    "imageFile": "relics/tungsten_rod.png"
+  },
+  {
+    "name": "Tuning Fork",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "Every time you play [blue]10[/blue] Skills, gain [blue]7[/blue] [gold]Block[/gold].",
+    "imageFile": "relics/tuning_fork.png"
+  },
+  {
+    "name": "Twisted Funnel",
+    "rarity": "Uncommon",
+    "character": "Silent",
+    "description": "At the start of each combat, apply [blue]4[/blue] [gold]Poison[/gold] to ALL enemies.",
+    "imageFile": "relics/twisted_funnel.png"
+  },
+  {
+    "name": "Unceasing Top",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Whenever you have no cards in [gold]Hand[/gold] during your turn, draw a card.",
+    "imageFile": "relics/unceasing_top.png"
+  },
+  {
+    "name": "Undying Sigil",
+    "rarity": "Shop",
+    "character": "Necrobinder",
+    "description": "Enemies with at least as much [gold]Doom[/gold] as HP deal [blue]50%[/blue] less damage.",
+    "imageFile": "relics/undying_sigil.png"
+  },
+  {
+    "name": "Unsettling Lamp",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Each combat, the first time you play a card that [gold]Debuffs[/gold] an enemy, double its effect.",
+    "imageFile": "relics/unsettling_lamp.png"
+  },
+  {
+    "name": "Vajra",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Start each combat with [blue]1[/blue] [gold]Strength[/gold].",
+    "imageFile": "relics/vajra.png"
+  },
+  {
+    "name": "Vambrace",
+    "rarity": "Uncommon",
+    "character": "Any",
+    "description": "The first time you gain [gold]Block[/gold] from a card each combat, double the amount gained.",
+    "imageFile": "relics/vambrace.png"
+  },
+  {
+    "name": "Velvet Choker",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. You cannot play more than [blue]6[/blue] cards per turn.",
+    "imageFile": "relics/velvet_choker.png"
+  },
+  {
+    "name": "Venerable Tea Set",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Whenever you enter a [gold]Rest Site[/gold], start the next combat with an additional [energy:2].",
+    "imageFile": "relics/venerable_tea_set.png"
+  },
+  {
+    "name": "Venerable Tea Set???",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Whenever you enter a [gold]Rest Site[/gold], start the next combat with an additional [energy:1].",
+    "imageFile": "relics/fake_venerable_tea_set.png"
+  },
+  {
+    "name": "Very Hot Cocoa",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Start each combat with an additional [blue][energy:4][/blue].",
+    "imageFile": "relics/very_hot_cocoa.png"
+  },
+  {
+    "name": "Vexing Puzzlebox",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "At the start of each combat, add a random card into your [gold]Hand[/gold]. It's free to play this turn.",
+    "imageFile": "relics/vexing_puzzlebox.png"
+  },
+  {
+    "name": "Vitruvian Minion",
+    "rarity": "Shop",
+    "character": "Regent",
+    "description": "Cards containing “Minion” deal double damage and gain double [gold]Block[/gold].",
+    "imageFile": "relics/vitruvian_minion.png"
+  },
+  {
+    "name": "War Hammer",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Whenever you kill an [gold]Elite[/gold], [gold]Upgrade[/gold] [blue]4[/blue] random cards.",
+    "imageFile": "relics/war_hammer.png"
+  },
+  {
+    "name": "War Paint",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] [blue]2[/blue] random Skills.",
+    "imageFile": "relics/war_paint.png"
+  },
+  {
+    "name": "Whetstone",
+    "rarity": "Common",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] [blue]2[/blue] random Attacks.",
+    "imageFile": "relics/whetstone.png"
+  },
+  {
+    "name": "Whispering Earring",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Gain [energy:1] at the start of each turn. [red]Vakuu plays your first turn for you.[/red]",
+    "imageFile": "relics/whispering_earring.png"
+  },
+  {
+    "name": "White Beast Statue",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "Potions always appear in combat rewards.",
+    "imageFile": "relics/white_beast_statue.png"
+  },
+  {
+    "name": "White Star",
+    "rarity": "Rare",
+    "character": "Any",
+    "description": "[gold]Elites[/gold] drop an additional [gold]Rare[/gold] card reward.",
+    "imageFile": "relics/white_star.png"
+  },
+  {
+    "name": "Wing Charm",
+    "rarity": "Shop",
+    "character": "Any",
+    "description": "A random card in each card reward is [gold]Enchanted[/gold] with [purple]Swift[/purple] [blue]1[/blue].",
+    "imageFile": "relics/wing_charm.png"
+  },
+  {
+    "name": "Winged Boots",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "You may ignore paths when choosing the next rooms to travel to [blue]3[/blue] times.",
+    "imageFile": "relics/winged_boots.png"
+  },
+  {
+    "name": "Wongo Customer Appreciation Badge",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Does nothing.",
+    "imageFile": "relics/wongo_customer_appreciation_badge.png"
+  },
+  {
+    "name": "Wongo's Mystery Ticket",
+    "rarity": "Event",
+    "character": "Any",
+    "description": "Receive [blue]3[/blue] random [gold]Relics[/gold] after [blue]5[/blue] combats.",
+    "imageFile": "relics/wongos_mystery_ticket.png"
+  },
+  {
+    "name": "Yummy Cookie",
+    "rarity": "Ancient",
+    "character": "Any",
+    "description": "Upon pickup, [gold]Upgrade[/gold] [blue]4[/blue] cards.",
+    "imageFile": "relics/yummy_cookie_defect.png"
+  }
+]

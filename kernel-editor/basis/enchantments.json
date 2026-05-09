@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Adroit",
+    "description": "Gain [blue]X[/blue] [gold]Block[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/adroit.png"
+  },
+  {
+    "name": "Clone",
+    "description": "This card can be duplicated at [gold]Rest Sites[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/clone.png"
+  },
+  {
+    "name": "Corrupted",
+    "description": "Deal [blue]50%[/blue] more damage, but lose [blue]2[/blue] HP.",
+    "applicableTo": "Attack",
+    "isStackable": false,
+    "imageFile": "enchantments/corrupted.png"
+  },
+  {
+    "name": "Glam",
+    "description": "This card has [gold]Replay[/gold] once per combat.",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/glam.png"
+  },
+  {
+    "name": "Goopy",
+    "description": "This card gains [gold]Exhaust[/gold]. When played, permanently increase this card's [gold]Block[/gold] by [blue]1[/blue].",
+    "applicableTo": "Defend cards",
+    "isStackable": false,
+    "imageFile": "enchantments/goopy.png"
+  },
+  {
+    "name": "Imbued",
+    "description": "This card is played automatically at the start of each combat.",
+    "applicableTo": "Skill",
+    "isStackable": false,
+    "imageFile": "enchantments/imbued.png"
+  },
+  {
+    "name": "Inky",
+    "description": "This card deals [blue]2[/blue] additional damage and applies [blue]1[/blue] [gold]Weak[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/inky.png"
+  },
+  {
+    "name": "Instinct",
+    "description": "This card's attack damage is doubled.",
+    "applicableTo": "Attack",
+    "isStackable": false,
+    "imageFile": "enchantments/instinct.png"
+  },
+  {
+    "name": "Momentum",
+    "description": "Increase this card's attack damage by [blue]X[/blue] this combat when played.",
+    "applicableTo": "Attack",
+    "isStackable": false,
+    "imageFile": "enchantments/momentum.png"
+  },
+  {
+    "name": "Nimble",
+    "description": "Increases [gold]Block[/gold] gained from this card by [blue]X[/blue].",
+    "applicableTo": "cards that gain Block",
+    "isStackable": false,
+    "imageFile": "enchantments/nimble.png"
+  },
+  {
+    "name": "Perfect Fit",
+    "description": "Whenever this would be shuffled into your [gold]Draw Pile[/gold], place it on the top instead.",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/perfect_fit.png"
+  },
+  {
+    "name": "Royally Approved",
+    "description": "This card has [gold]Innate[/gold] and [gold]Retain[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/royally_approved.png"
+  },
+  {
+    "name": "Sharp",
+    "description": "Increases damage on this card by [blue]X[/blue].",
+    "applicableTo": "Attack",
+    "isStackable": false,
+    "imageFile": "enchantments/sharp.png"
+  },
+  {
+    "name": "Slither",
+    "description": "When you draw this card, randomize its cost from [blue]0[/blue] to [blue]3[/blue].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/slither.png"
+  },
+  {
+    "name": "Slumbering Essence",
+    "description": "If this card is in your hand at the end of turn, reduce its cost by [blue]1[/blue] until it is played.",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/slumbering_essence.png"
+  },
+  {
+    "name": "Soul's Power",
+    "description": "This card loses [gold]Exhaust[/gold].",
+    "applicableTo": "cards with Exhaust",
+    "isStackable": false,
+    "imageFile": "enchantments/souls_power.png"
+  },
+  {
+    "name": "Sown",
+    "description": "The first time you play this card each combat, gain [energy:X].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/sown.png"
+  },
+  {
+    "name": "Spiral",
+    "description": "This card gains [gold]Replay[/gold] [blue]1[/blue].",
+    "applicableTo": "Basic Strike, Defend cards",
+    "isStackable": false,
+    "imageFile": "enchantments/spiral.png"
+  },
+  {
+    "name": "Steady",
+    "description": "This card gains [gold]Retain[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/steady.png"
+  },
+  {
+    "name": "Swift",
+    "description": "The first time you play this card, draw [blue]X[/blue] cards.",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/swift.png"
+  },
+  {
+    "name": "Tezcatara's Ember",
+    "description": "Costs [blue]0[/blue] and gains [gold]Eternal[/gold].",
+    "applicableTo": null,
+    "isStackable": false,
+    "imageFile": "enchantments/tezcataras_ember.png"
+  },
+  {
+    "name": "Vigorous",
+    "description": "The first time this card is played, it deals [blue]X[/blue] additional damage.",
+    "applicableTo": "Attack",
+    "isStackable": false,
+    "imageFile": "enchantments/vigorous.png"
+  }
+]

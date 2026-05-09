@@ -1,0 +1,11 @@
+{
+  "version": "v0.103.2",
+  "versionSource": "dashboard resource_meta.json",
+  "snapshot_date": "2026-05-09T04:00:54.893Z",
+  "source": "C:\\Users\\zhuyl\\AppData\\Roaming\\sts2-dashboard\\Assets\\data",
+  "counts": {
+    "cards": 576,
+    "relics": 293,
+    "enchantments": 22
+  }
+}
