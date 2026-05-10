@@ -1,0 +1,39 @@
+{
+  "atlas": "queen_boss_node.atlas",
+  "canvas": {
+    "w": 550,
+    "h": 550
+  },
+  "parts": [
+    {
+      "region": "crown_black",
+      "x": 163,
+      "y": 4,
+      "rotation": 0
+    },
+    {
+      "region": "fire12",
+      "x": 227,
+      "y": 226,
+      "rotation": 180
+    },
+    {
+      "region": "left_torch_black",
+      "x": 68,
+      "y": 249,
+      "rotation": 180
+    },
+    {
+      "region": "middle_torch_black",
+      "x": 166,
+      "y": 353,
+      "rotation": 180
+    },
+    {
+      "region": "right_torch_black",
+      "x": 325,
+      "y": 245,
+      "rotation": 180
+    }
+  ]
+}

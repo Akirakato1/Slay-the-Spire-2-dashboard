@@ -782,18 +782,22 @@ let currentDetailRelics = [];
 
 // ── HP Journey Graph ──────────────────────────────────────────────────────────
 
+// Icon filenames are the PCK-extracted assets that the resource-update
+// pipeline writes into Assets/images/map_icons/ via processStagedMapAssets.
+// The unknown_* variants are STS2's "revealed unknown" icons (the ? room
+// after you've been spoiled by a Map of the Stars-style effect).
 const NODE_CFG = {
-  ancient:          { img: 'Map-Event.png',    color: '#c9a227', bg: '#ffffff' },
-  monster:          { img: 'Map-Monster.png',  color: '#aaa',    bg: '#000000' },
-  elite:            { img: 'Map-Elite.png',    color: '#c084f5', bg: '#2e0a4a' },
-  boss:             { img: 'Map-Boss.png',     color: '#9b59b6', bg: '#ffffff' },
-  shop:             { img: 'Map-Merchant.png', color: '#1a1a00', bg: '#e6b800' },
-  rest_site:        { img: 'Map-RestSite.png', color: '#27ae60', bg: '#8b0000' },
-  treasure:         { img: 'Map-Treasure.png', color: '#e5c100', bg: '#ffffff' },
-  event:            { img: 'Map-Event.png',    color: '#c8a820', bg: '#5a4800' },
-  unknown_fight:    { img: 'Map-Monster.png',  color: '#c8a820', bg: '#5a4800', dim: true },
-  unknown_shop:     { img: 'Map-Merchant.png', color: '#c8a820', bg: '#5a4800', dim: true },
-  unknown_treasure: { img: 'Map-Treasure.png', color: '#c8a820', bg: '#5a4800', dim: true },
+  ancient:          { img: 'ancient_node_neow.png',  color: '#c9a227', bg: '#ffffff' },
+  monster:          { img: 'map_monster.png',        color: '#aaa',    bg: '#000000' },
+  elite:            { img: 'map_elite.png',          color: '#c084f5', bg: '#2e0a4a' },
+  boss:             { img: 'map_chest_boss.png',     color: '#9b59b6', bg: '#ffffff' },
+  shop:             { img: 'map_shop.png',           color: '#1a1a00', bg: '#e6b800' },
+  rest_site:        { img: 'map_rest.png',           color: '#27ae60', bg: '#8b0000' },
+  treasure:         { img: 'map_chest.png',          color: '#e5c100', bg: '#ffffff' },
+  event:            { img: 'map_unknown.png',        color: '#c8a820', bg: '#5a4800' },
+  unknown_fight:    { img: 'map_unknown_monster.png', color: '#c8a820', bg: '#5a4800', dim: true },
+  unknown_shop:     { img: 'map_unknown_shop.png',    color: '#c8a820', bg: '#5a4800', dim: true },
+  unknown_treasure: { img: 'map_unknown_chest.png',   color: '#c8a820', bg: '#5a4800', dim: true },
 };
 
 const ACT_BAND_COLORS = [
@@ -976,9 +980,8 @@ function renderHpGraph(run, playerIdx = 0) {
     const cx  = x.toFixed(1);
     const cy  = iconCY.toFixed(1);
     svg.push(`<g class="graph-node-icon" data-node-idx="${i}" style="cursor:pointer">`);
-    // Background circle (colored per encounter type)
-    svg.push(`<circle cx="${cx}" cy="${cy}" r="${ICON_R}" fill="${cfg.bg}" stroke="none" style="pointer-events:none"/>`);
-    // Dashed outline for unknown/dim variants
+    // Dashed outline for unknown/dim variants (icon itself stands alone — no
+    // colored backdrop circle; the PCK-extracted PNGs are self-contained).
     if (cfg.dim) {
       svg.push(`<circle cx="${cx}" cy="${cy}" r="${(ICON_R + 1.5).toFixed(1)}" fill="none" stroke="${cfg.color}" stroke-width="1.2" stroke-dasharray="2.5,2" opacity="0.85" style="pointer-events:none"/>`);
     }
@@ -1160,6 +1163,13 @@ function showRunDetail(run) {
   const isFav = favoritesSet.has(runKey(run));
   btn.classList.toggle('active', isFav);
   btn.dataset.runKey = runKey(run);
+
+  // Background pre-warm: generate the act maps in the main process now so
+  // that when the user later opens Deck Stepper → Show Map they're already
+  // cached. Runs after a short idle delay so it doesn't fight with this
+  // page's rendering. Cancels itself if the user navigates to a different
+  // run (handled inside preWarmRunMaps via _mapPrewarmKey).
+  schedulePreWarm(run);
 }
 
 function hideRunDetail() {
@@ -2793,6 +2803,7 @@ async function init() {
       if (e.key === 'ArrowLeft')  { navigateStepper(-1); e.preventDefault(); return; }
       if (e.key === 'ArrowRight') { navigateStepper(1);  e.preventDefault(); return; }
       if (e.key === 'Escape')     { closeDeckStepper(); return; }
+      if (!isInput && (e.key === 'm' || e.key === 'M')) { toggleMapPanel(); e.preventDefault(); return; }
       return;
     }
 
@@ -3450,6 +3461,32 @@ let _stepperData    = [];   // array of step objects built by buildStepperData()
 let _stepperIdx     = 0;    // current step index
 let _stepperOpen    = false;
 
+// Map side-panel state. _mapPanelOpen toggles the panel; _mapByAct caches
+// per-act { svg, pathNodeMap } so we only fetch each act once per cache
+// generation. _mapScrollByAct persists the user's scroll position per act so
+// it survives stepping through the same act. _mapRenderedActIdx remembers
+// which act's SVG is currently in the DOM, so we can decide whether to swap
+// on step change. _mapCacheKey identifies which (run, playerIdx) the cache
+// belongs to — when it doesn't match what we want, the cache is invalidated.
+// _mapPrewarmKey is set while a background pre-warm is running so we can
+// cancel it if the user navigates to a different run.
+let _mapPanelOpen      = false;
+let _mapByAct          = new Map();   // actIdx → { svg, pathNodeMap, alignment }
+let _mapScrollByAct    = new Map();   // actIdx → scrollTop (number)
+let _mapRenderedActIdx = -1;
+let _mapCacheKey       = null;
+let _mapPrewarmKey     = null;
+
+// Cache key is per-RUN only, not per-player. In coop both players visit the
+// same map nodes in the same order, so the generated SVG (layout, path
+// overlay, clickable nodes, current-node highlight via nodeInAct) is
+// identical regardless of which player tab is active. Switching player
+// tabs should NOT trigger a re-fetch.
+function _runMapCacheKey(run) {
+  if (!run) return null;
+  return `${run.seed || ''}|${run.start_time || 0}`;
+}
+
 // ── Card matching helper ──────────────────────────────────────────────────────
 // During backward reconstruction, find a card in `deck` matching `cardRef`.
 // Priority: exact floor match → node floor match → highest-floor copy → first copy.
@@ -3596,7 +3633,7 @@ function buildStepperData(run, playerIdx) {
   // ── Build step objects ────────────────────────────────────────────────────
   const steps = [];
   for (let i = 0; i < N; i++) {
-    const { actIdx, raw } = allNodes[i];
+    const { actIdx, nodeInAct, raw } = allNodes[i];
     const ps    = raw.player_stats?.[playerIdx] ?? raw.player_stats?.[0] ?? {};
     const room  = raw.rooms?.[0] ?? {};
     const floor = i + 1;
@@ -3654,6 +3691,7 @@ function buildStepperData(run, playerIdx) {
 
     steps.push({
       nodeIdx: i,
+      nodeInAct,
       floor,
       actIdx,
       category,
@@ -3715,6 +3753,21 @@ function openDeckStepper() {
   _stepperData  = buildStepperData(run, _stepperPlayerIdx);
   _stepperIdx   = 0;
   _stepperOpen  = true;
+  // Only invalidate the map cache if it belongs to a different run — the
+  // pre-warm fired by showRunDetail() has likely already populated _mapByAct
+  // and the panel will open instantly. The cache key intentionally ignores
+  // _stepperPlayerIdx since the map is identical for all players in coop.
+  const wantKey = _runMapCacheKey(run);
+  if (_mapCacheKey !== wantKey) {
+    _mapByAct.clear();
+    _mapScrollByAct.clear();
+    _mapRenderedActIdx = -1;
+    _mapCacheKey = wantKey;
+  }
+  // Default closed; user toggles via the Show Map chip.
+  _mapPanelOpen = false;
+  document.getElementById('deckStepperModal').classList.remove('with-map');
+  document.getElementById('stepperMapPanel').style.display = 'none';
   document.getElementById('deckStepperOverlay').style.display = 'flex';
   renderStepperPlayerTabs();
   renderStepperStep(0);
@@ -3742,7 +3795,10 @@ function setStepperPlayer(newIdx) {
   if (newIdx < 0 || newIdx >= players.length) return;
   if (newIdx === _stepperPlayerIdx) return;
   _stepperPlayerIdx = newIdx;
-  // Rebuild data for new player but preserve current step index
+  // Rebuild data for new player but preserve current step index. The map
+  // cache deliberately stays intact — both players walk the same nodes in
+  // coop, so the rendered SVG (layout, path overlay, click hooks) is the
+  // same regardless of which player tab is active.
   const keepIdx = _stepperIdx;
   _stepperData = buildStepperData(run, _stepperPlayerIdx);
   _stepperIdx = Math.min(keepIdx, _stepperData.length - 1);
@@ -3769,6 +3825,23 @@ function renderStepperPlayerTabs() {
 }
 
 // ── Render one stepper step ───────────────────────────────────────────────────
+
+// Run-file change records (`cards_removed`, `cards_transformed`, the bare
+// strings in `upgraded_cards`) only carry `{id, floor_added_to_deck?}`. The
+// `props` field — which holds Mad Science's `TinkerTimeRider` — only lives
+// on cards in the deck snapshots and inside `cards_gained`. Without props,
+// `tinkerRiderForCard` returns null and the card hydrates with the wrong
+// variant. This helper backfills props from a deck snapshot so change-section
+// renders match what the current-deck section shows.
+function _enrichCardWithProps(card, ...decks) {
+  if (!card || typeof card !== 'object' || card.props || !card.id) return card;
+  for (const deck of decks) {
+    if (!Array.isArray(deck)) continue;
+    const match = deck.find((c) => c?.id === card.id);
+    if (match?.props) return { ...card, props: match.props };
+  }
+  return card;
+}
 
 function stepperCardHtml(card, extraClass = '', labelHtml = '') {
   const id       = card?.id || card;
@@ -3808,6 +3881,9 @@ function renderStepperStep(idx) {
   if (!_stepperData.length) return;
   const step = _stepperData[idx];
   const total = _stepperData.length;
+  // Final deck snapshot — used as a fallback source of card `props` (notably
+  // Mad Science's TinkerTimeRider) when change-section records lack them.
+  const finalDeck = _currentDetailRun?.players?.[_stepperPlayerIdx]?.deck;
 
   document.getElementById('stepperStepInfo').textContent = `Step ${idx + 1} / ${total}`;
 
@@ -3935,7 +4011,7 @@ function renderStepperStep(idx) {
     const shopCardItems = shopCards.map(item => {
       const cls = item.bought ? 'chosen' : '';
       return `<div class="stepper-choice-wrap">
-        ${stepperCardHtml(item.card, `stepper-choice-card ${cls}`)}
+        ${stepperCardHtml(_enrichCardWithProps(item.card, step.deckBefore, finalDeck), `stepper-choice-card ${cls}`)}
         ${item.bought ? '<div class="stepper-choice-lbl chosen-lbl">Bought</div>' : ''}
       </div>`;
     }).join('');
@@ -4090,7 +4166,7 @@ function renderStepperStep(idx) {
         const cls = ch.was_picked ? 'chosen' : '';
         const lbl = isCurseGroup ? 'Added' : 'Picked';
         return `<div class="stepper-choice-wrap">
-          ${stepperCardHtml(ch.card, `stepper-choice-card ${cls}`)}
+          ${stepperCardHtml(_enrichCardWithProps(ch.card, step.deckBefore, finalDeck), `stepper-choice-card ${cls}`)}
           ${ch.was_picked ? `<div class="stepper-choice-lbl chosen-lbl">${lbl}</div>` : ''}
         </div>`;
       }).join('');
@@ -4119,7 +4195,7 @@ function renderStepperStep(idx) {
   const gained = step.changes.filter(c => c.type === 'gained');
   if (gained.length > 0) {
     const cards = gained.map(ch =>
-      `<div class="stepper-choice-wrap">${stepperCardHtml(ch.card, 'stepper-choice-card')}</div>`
+      `<div class="stepper-choice-wrap">${stepperCardHtml(_enrichCardWithProps(ch.card, step.deckBefore), 'stepper-choice-card')}</div>`
     ).join('');
     gainedHtml = `<div class="stepper-section">
       <div class="stepper-sec-title">Cards Added</div>
@@ -4139,7 +4215,7 @@ function renderStepperStep(idx) {
   );
   if (removals.length > 0) {
     const cards = removals.map(ch =>
-      `<div class="stepper-choice-wrap">${stepperCardHtml(ch.card, 'stepper-choice-card removal')}</div>`
+      `<div class="stepper-choice-wrap">${stepperCardHtml(_enrichCardWithProps(ch.card, step.deckBefore), 'stepper-choice-card removal')}</div>`
     ).join('');
     removalsHtml = `<div class="stepper-section">
       <div class="stepper-sec-title">Card Removal</div>
@@ -4148,12 +4224,22 @@ function renderStepperStep(idx) {
   }
 
   // ── Card upgrade section ─────────────────────────────────────────────────
+  // upgraded_cards is just an array of card-ID strings, so we have to look up
+  // the pre-upgrade card in deckBefore to recover its props (Mad Science's
+  // TinkerTimeRider) and its current upgrade level (Searing-Blow-style cards
+  // can be upgraded repeatedly).
   let upgradesHtml = '';
   const upgrades = step.changes.filter(c => c.type === 'upgraded');
   if (upgrades.length > 0) {
-    const cards = upgrades.map(ch =>
-      `<div class="stepper-choice-wrap">${stepperCardHtml({ id: ch.cardId, current_upgrade_level: 1 }, 'stepper-choice-card')}</div>`
-    ).join('');
+    const cards = upgrades.map(ch => {
+      const fromDeck = (step.deckBefore || []).find(c => c?.id === ch.cardId);
+      const synth = {
+        id: ch.cardId,
+        current_upgrade_level: (fromDeck?.current_upgrade_level || 0) + 1,
+        ...(fromDeck?.props ? { props: fromDeck.props } : {}),
+      };
+      return `<div class="stepper-choice-wrap">${stepperCardHtml(synth, 'stepper-choice-card')}</div>`;
+    }).join('');
     upgradesHtml = `<div class="stepper-section">
       <div class="stepper-sec-title">Upgraded</div>
       <div class="stepper-choices">${cards}</div>
@@ -4161,14 +4247,17 @@ function renderStepperStep(idx) {
   }
 
   // ── Card transform section ───────────────────────────────────────────────
+  // Original was in the deck before this step; final is the new card after
+  // transformation, which (if it survives) lives in the final player deck
+  // (`finalDeck`, hoisted to the top of this function).
   let transformsHtml = '';
   const transforms = step.changes.filter(c => c.type === 'transformed');
   if (transforms.length > 0) {
     const items = transforms.map(ch =>
       `<div class="stepper-transform-pair">
-        ${stepperCardHtml(ch.original, 'stepper-choice-card')}
+        ${stepperCardHtml(_enrichCardWithProps(ch.original, step.deckBefore, finalDeck), 'stepper-choice-card')}
         <span class="stepper-transform-arrow">⇒</span>
-        ${stepperCardHtml(ch.final, 'stepper-choice-card')}
+        ${stepperCardHtml(_enrichCardWithProps(ch.final, finalDeck, step.deckBefore), 'stepper-choice-card')}
       </div>`
     ).join('');
     transformsHtml = `<div class="stepper-section">
@@ -4189,7 +4278,7 @@ function renderStepperStep(idx) {
         ? (lookupEnchantmentData(enchId)?.name || idToDisplayName(enchId))
         : '';
       return `<div class="stepper-choice-wrap">
-        ${stepperCardHtml(ch.card, 'stepper-choice-card')}
+        ${stepperCardHtml(_enrichCardWithProps(ch.card, step.deckBefore, finalDeck), 'stepper-choice-card')}
         ${enchName ? `<div class="stepper-choice-lbl">${escHtml(enchName)}</div>` : ''}
       </div>`;
     }).join('');
@@ -4251,10 +4340,14 @@ function renderStepperStep(idx) {
     ? ` data-stepper-event="${escHtml(evData.name)}" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;"`
     : '';
 
+  const mapBtnLabel = _mapPanelOpen ? 'Hide Map' : 'Show Map';
+  const mapBtnCls   = _mapPanelOpen ? 'stepper-mapbtn active' : 'stepper-mapbtn';
+
   const nodeHeaderHtml = `<div class="stepper-node-info">
     <div class="stepper-node-header">
       <span class="stepper-node-name"${nameAttrs}>${iconHtml}${escHtml(nodeName)}</span>
       <span style="color:var(--text-muted);font-size:0.85em;">${escHtml(actLabel)} · Floor ${step.floor}</span>
+      <button id="stepperMapBtn" class="${mapBtnCls}" title="Toggle map (M)">${mapBtnLabel}</button>
     </div>
     <div class="stepper-hp-row">
       ${hpHtml}
@@ -4265,6 +4358,199 @@ function renderStepperStep(idx) {
 
   document.getElementById('stepperBody').innerHTML =
     nodeHeaderHtml + shopHtml + choicesHtml + gainedHtml + removalsHtml + upgradesHtml + transformsHtml + enchantsHtml + relicsHtml + deckHtml;
+
+  // Wire the Show Map chip (it's re-rendered with each step, so re-bind here)
+  const mapBtn = document.getElementById('stepperMapBtn');
+  if (mapBtn) mapBtn.addEventListener('click', () => toggleMapPanel());
+
+  // Sync the side-panel SVG to the new step (no-op if panel closed).
+  syncMapPanelToStep();
+}
+
+// ── Background map pre-warm ───────────────────────────────────────────────────
+// Generated maps are several hundred KB and take ~50–200 ms each to render
+// in the main process. Doing it lazily on "Show Map" gives a perceptible
+// pause; doing it eagerly on stepper open delays the modal. Instead we kick
+// it off after the run-detail page has settled so that, by the time the user
+// clicks Deck Stepper → Show Map, the per-act SVGs are already in cache.
+
+function schedulePreWarm(run) {
+  if (!run || !run.acts?.length) return;
+  // Defer past the current frame + a small idle buffer so the run-detail
+  // render can paint first. Falls back to setTimeout where requestIdleCallback
+  // isn't available (older Electron).
+  const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 250));
+  ric(() => preWarmRunMaps(run));
+}
+
+async function preWarmRunMaps(run) {
+  if (!run || !Array.isArray(run.acts)) return;
+  const myKey = _runMapCacheKey(run);
+  _mapPrewarmKey = myKey;
+  // Make sure the cache reflects what we're about to fill.
+  if (_mapCacheKey !== myKey) {
+    _mapByAct.clear();
+    _mapScrollByAct.clear();
+    _mapRenderedActIdx = -1;
+    _mapCacheKey = myKey;
+  }
+  for (let i = 0; i < run.acts.length; i++) {
+    // Bail if the user navigated away or kicked off a fresh pre-warm.
+    if (_mapPrewarmKey !== myKey) return;
+    if (_mapByAct.has(i)) continue;
+    try {
+      const res = await window.electronAPI.generateActMap(run, i);
+      if (_mapPrewarmKey !== myKey) return;
+      if (res?.ok) {
+        _mapByAct.set(i, { svg: res.svg, pathNodeMap: res.pathNodeMap, alignment: res.alignment });
+      }
+    } catch (_) { /* best-effort; the lazy load on Show Map still runs */ }
+    // Yield between acts so we don't block any user input that comes in.
+    await new Promise((r) => setTimeout(r, 0));
+  }
+}
+
+// ── Map side panel ────────────────────────────────────────────────────────────
+
+function toggleMapPanel() {
+  _mapPanelOpen = !_mapPanelOpen;
+  const modal = document.getElementById('deckStepperModal');
+  const panel = document.getElementById('stepperMapPanel');
+  if (_mapPanelOpen) {
+    modal.classList.add('with-map');
+    panel.style.display = 'flex';
+    syncMapPanelToStep();
+  } else {
+    // Save current scroll before closing so it persists when reopened.
+    saveCurrentMapScroll();
+    modal.classList.remove('with-map');
+    panel.style.display = 'none';
+  }
+  // Refresh the chip label / active state.
+  const btn = document.getElementById('stepperMapBtn');
+  if (btn) {
+    btn.textContent = _mapPanelOpen ? 'Hide Map' : 'Show Map';
+    btn.classList.toggle('active', _mapPanelOpen);
+  }
+}
+
+function saveCurrentMapScroll() {
+  if (_mapRenderedActIdx < 0) return;
+  const scroller = document.getElementById('stepperMapScroll');
+  if (scroller) _mapScrollByAct.set(_mapRenderedActIdx, scroller.scrollTop);
+}
+
+// Called whenever the current step (or panel state) changes.
+async function syncMapPanelToStep() {
+  if (!_mapPanelOpen || !_stepperOpen) return;
+  const step = _stepperData[_stepperIdx];
+  if (!step) return;
+  const actIdx = step.actIdx;
+
+  // If the rendered act differs, swap the SVG (saving the old scroll first).
+  if (actIdx !== _mapRenderedActIdx) {
+    saveCurrentMapScroll();
+    let entry = _mapByAct.get(actIdx);
+    if (!entry) {
+      const scroller = document.getElementById('stepperMapScroll');
+      scroller.innerHTML = `<div style="padding:14px;color:var(--text-muted);font-size:0.85rem;">Generating map…</div>`;
+      try {
+        const res = await window.electronAPI.generateActMap(_currentDetailRun, actIdx);
+        if (!res.ok) {
+          scroller.innerHTML = `<div style="padding:14px;color:var(--text-muted);font-size:0.85rem;">Map error: ${escHtml(res.error || '?')}</div>`;
+          return;
+        }
+        entry = { svg: res.svg, pathNodeMap: res.pathNodeMap, alignment: res.alignment };
+        _mapByAct.set(actIdx, entry);
+        if (!res.alignment?.ok) {
+          console.warn(`[map] act ${actIdx + 1} path alignment FAILED: ${res.alignment?.reason}. `
+                     + `Visited path overlay + click navigation will be disabled. `
+                     + `Most common cause: run's build_id doesn't match the decompiled DLL — `
+                     + `re-run the resource update to match the current game build.`);
+        } else {
+          console.log(`[map] act ${actIdx + 1}: ${res.pathNodeMap?.length || 0} clickable path nodes`
+                     + (res.alignment.ambiguous ? '  (AMBIGUOUS path)' : ''));
+        }
+      } catch (e) {
+        scroller.innerHTML = `<div style="padding:14px;color:var(--text-muted);font-size:0.85rem;">Map error: ${escHtml(e.message || String(e))}</div>`;
+        return;
+      }
+      // The user might have toggled the panel off mid-fetch; if so, bail.
+      if (!_mapPanelOpen) return;
+    }
+    const scroller = document.getElementById('stepperMapScroll');
+    scroller.innerHTML = entry.svg;
+    _mapRenderedActIdx = actIdx;
+    // Click delegation is set up once in initDeckStepper on #stepperMapScroll
+    // (HTML element — events fire reliably even on SVG children). No per-node
+    // listeners needed here.
+    // Restore previous scroll for this act (or 0 first time).
+    scroller.scrollTop = _mapScrollByAct.get(actIdx) || 0;
+    // Persist scroll on user scroll events.
+    scroller.onscroll = () => { _mapScrollByAct.set(actIdx, scroller.scrollTop); };
+  }
+
+  highlightCurrentMapNode();
+  updateMapActNav();
+}
+
+// Jump to the first step of `actIdx` (its ancient/Neow node). Used by the
+// map panel's prev/next-act buttons.
+function jumpToFirstStepOfAct(actIdx) {
+  for (let i = 0; i < _stepperData.length; i++) {
+    if (_stepperData[i].actIdx === actIdx) {
+      if (i !== _stepperIdx) {
+        _stepperIdx = i;
+        renderStepperStep(i);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+// Refresh the prev/next-act button labels + enabled state for the current step.
+function updateMapActNav() {
+  const prev = document.getElementById('stepperMapPrevActBtn');
+  const next = document.getElementById('stepperMapNextActBtn');
+  const lab  = document.getElementById('stepperMapActLabel');
+  if (!prev || !next || !lab) return;
+  const step = _stepperData[_stepperIdx];
+  if (!step) return;
+  const actIdx  = step.actIdx;
+  const totalActs = (_currentDetailRun?.acts || []).length;
+  prev.disabled = actIdx <= 0;
+  next.disabled = actIdx >= totalActs - 1;
+  lab.textContent = `Act ${actIdx + 1} / ${totalActs}`;
+}
+
+function jumpToActNode(actIdx, nodeInAct) {
+  for (let i = 0; i < _stepperData.length; i++) {
+    const s = _stepperData[i];
+    if (s.actIdx === actIdx && s.nodeInAct === nodeInAct) {
+      if (i !== _stepperIdx) {
+        _stepperIdx = i;
+        renderStepperStep(i);
+      }
+      return;
+    }
+  }
+}
+
+// Add the .map-node-current class to the SVG node matching this step's
+// (col, row). We translate the absolute step index → nodeInAct (its index
+// within this act's slice of _stepperData) and look up the SVG group by
+// its data-step-in-act attribute.
+function highlightCurrentMapNode() {
+  const scroller = document.getElementById('stepperMapScroll');
+  if (!scroller) return;
+  const svg = scroller.querySelector('svg');
+  if (!svg) return;
+  for (const el of svg.querySelectorAll('.map-node-current')) el.classList.remove('map-node-current');
+  const step = _stepperData[_stepperIdx];
+  if (!step || step.actIdx !== _mapRenderedActIdx) return;
+  const target = svg.querySelector(`.map-node[data-step-in-act="${step.nodeInAct}"]`);
+  if (target) target.classList.add('map-node-current');
 }
 
 // ── Stepper event wiring (called from init) ───────────────────────────────────
@@ -4274,6 +4560,37 @@ function initDeckStepper() {
   document.getElementById('stepperCloseBtn').addEventListener('click', () => closeDeckStepper());
   document.getElementById('stepperPrevBtn').addEventListener('click', () => navigateStepper(-1));
   document.getElementById('stepperNextBtn').addEventListener('click', () => navigateStepper(1));
+
+  // Map panel act-nav buttons — jump to the first step (ancient/Neow) of the
+  // adjacent act. The buttons are disabled when no such act exists.
+  document.getElementById('stepperMapPrevActBtn').addEventListener('click', () => {
+    const step = _stepperData[_stepperIdx];
+    if (step) jumpToFirstStepOfAct(step.actIdx - 1);
+  });
+  document.getElementById('stepperMapNextActBtn').addEventListener('click', () => {
+    const step = _stepperData[_stepperIdx];
+    if (step) jumpToFirstStepOfAct(step.actIdx + 1);
+  });
+
+  // Map node click → jump to that step. Listening on the HTML scroller and
+  // walking up parentNode is the most reliable way to handle clicks that may
+  // originate inside SVG (where closest()/dataset on <g> elements has been
+  // historically flaky in Chromium).
+  document.getElementById('stepperMapScroll').addEventListener('click', (e) => {
+    let el = e.target;
+    while (el && el.id !== 'stepperMapScroll') {
+      if (el.getAttribute) {
+        const v = el.getAttribute('data-step-in-act');
+        if (v != null) {
+          const n = parseInt(v, 10);
+          if (!isNaN(n) && _mapRenderedActIdx >= 0) jumpToActNode(_mapRenderedActIdx, n);
+          return;
+        }
+      }
+      el = el.parentNode;
+    }
+  });
+
   document.getElementById('stepperPlayerTabs').addEventListener('click', (e) => {
     const btn = e.target.closest('.stepper-player-tab');
     if (!btn) return;

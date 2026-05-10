@@ -410,6 +410,120 @@ const enchParser      = require(path.join(PARSERS_DIR, 'enchantment_parser.js'))
 const eventParser     = require(path.join(PARSERS_DIR, 'event_parser.js'));
 const { simplifyAll } = require(path.join(__dirname, '..', 'scripts', 'simplifier.js'));
 
+// Map generation lives under scripts/mapgen and runs in the main process so
+// the renderer (with nodeIntegration:false) can request SVGs over IPC.
+const { generateActMap: _genActMap } = require(path.join(__dirname, '..', 'scripts', 'mapgen', 'index.js'));
+const { renderSvg: _renderActSvg }   = require(path.join(__dirname, '..', 'scripts', 'mapgen', 'render_svg.js'));
+const { extractMapAssets: _extractMapAssets, processStagedMapAssets, _testSliceSpineBoss } = require(path.join(__dirname, '..', 'scripts', 'extract_map_assets.js'));
+
+// Convenience paths under appdata for map assets. Render reads from these;
+// extraction writes to these. Subdirs (`map_icons`, `map_backdrops`) are
+// created on demand by the extractor.
+const mapAssetsDir = path.join(imagesDir);   // Assets/images/{map_icons, map_backdrops}/
+
+// Trigger a fresh extraction of all map-related image assets from the user's
+// PCK install. Streams progress via 'map-assets-extract-progress'.
+// Debug: re-slice a single Spine boss atlas to a custom output path. Lets us
+// iterate on SPINE_BOSS_OVERRIDES without re-running the full pipeline.
+//   await electronAPI.sliceSpineBossTest(atlasPath, outputPath)
+ipcMain.handle('slice-spine-boss-test', (_event, atlasPath, outputPath) => {
+  try {
+    if (!atlasPath || !outputPath) return { ok: false, error: 'atlasPath and outputPath required' };
+    if (!fs.existsSync(atlasPath))   return { ok: false, error: `atlas not found: ${atlasPath}` };
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    _testSliceSpineBoss(atlasPath, outputPath);
+    return { ok: true, outputPath };
+  } catch (e) {
+    return { ok: false, error: e.message, stack: e.stack };
+  }
+});
+
+ipcMain.handle('extract-map-assets', async () => {
+  try {
+    const steam = detectSteam();
+    if (!steam.found || !steam.install.pckExists) return { ok: false, error: 'STS2 install / PCK not found' };
+    const gdre = toolManager.detectInstalled('gdre');
+    if (!gdre.installed) return { ok: false, error: 'GDRE Tools not installed (run the resource-update flow first)' };
+
+    const result = await _extractMapAssets({
+      pckPath:   steam.install.pckPath,
+      gdreExe:   gdre.executablePath,
+      outputDir: mapAssetsDir,
+      onProgress: (p) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('map-assets-extract-progress', p);
+        }
+      },
+    });
+    return { ok: true, ...result };
+  } catch (e) {
+    return { ok: false, error: e.message, stack: e.stack };
+  }
+});
+
+// Generate the SVG for one act of a run, with click hooks for each node on
+// the user's recorded path. Returns:
+//   { ok, svg, pathNodeMap, alignment }
+// where pathNodeMap[k] = { col, row, nodeInAct } for path[k]; the renderer
+// uses this to map (col,row) clicks back to the corresponding stepper step.
+ipcMain.handle('generate-act-map', (_event, runData, actIndex) => {
+  try {
+    const acts = runData.acts || [];
+    if (actIndex < 0 || actIndex >= acts.length) {
+      return { ok: false, error: `actIndex ${actIndex} out of range (0..${acts.length - 1})` };
+    }
+    const actId        = acts[actIndex];
+    const visited      = runData.map_point_history?.[actIndex] || null;
+    const isMultiplayer = (runData.players?.length || 1) > 1
+                       || (runData.game_mode && /(co_op|coop|multi)/i.test(String(runData.game_mode)));
+
+    const { graph, alignment } = _genActMap({
+      actId, actIndex,
+      seedString:    runData.seed,
+      ascension:     runData.ascension,
+      modifiers:     runData.modifiers,
+      isMultiplayer,
+      visited,
+    });
+
+    // Pick the boss model_id(s) and ancient model_id from visit history so the
+    // renderer can use the right icons.
+    const bossModelIds = [];
+    let ancientModelId = null;
+    for (const entry of (visited || [])) {
+      if (entry?.map_point_type === 'boss' && entry.rooms?.[0]?.model_id) {
+        bossModelIds.push(entry.rooms[0].model_id);
+      } else if (entry?.map_point_type === 'ancient' && entry.rooms?.[0]?.model_id && !ancientModelId) {
+        ancientModelId = entry.rooms[0].model_id;
+      }
+    }
+
+    // Build the click-to-step mapping. Path index k corresponds to visited[k]
+    // in the run's per-act history; the renderer combines our nodeInAct with
+    // its stepper data to produce the absolute step index.
+    const pathNodeMap = [];
+    if (alignment.ok) {
+      alignment.path.forEach((p, k) => {
+        pathNodeMap.push({ col: p.coord.col, row: p.coord.row, nodeInAct: k });
+      });
+    }
+
+    const svg = _renderActSvg(graph, alignment.ok ? alignment.path : [], {
+      actId, bossModelIds, ancientModelId,
+      clickableSteps: pathNodeMap,
+      iconsDir:     path.join(mapAssetsDir, 'map_icons'),
+      backdropsDir: path.join(mapAssetsDir, 'map_backdrops'),
+    });
+
+    return {
+      ok: true, svg, pathNodeMap, actId,
+      alignment: { ok: alignment.ok, ambiguous: !!alignment.ambiguous, reason: alignment.reason || null },
+    };
+  } catch (e) {
+    return { ok: false, error: e.message, stack: e.stack };
+  }
+});
+
 // Find the user's STS2 install. Optionally takes a custom Steam folder path
 // for the BYO-path flow when auto-detect fails.
 ipcMain.handle('detect-sts2-install', (_event, customSteamPath = null) => {
@@ -515,70 +629,6 @@ async function _fetchText(url, timeoutMs = 10000) {
   return resp.text();
 }
 
-// Map icons live in the repo at top-level `map_icons/` and are too small +
-// stable to bother re-extracting from the game atlas. We just fetch them
-// on demand the same way kernels do, into Assets/images/map_icons/ so the
-// existing `appdata://images/map_icons/<name>.png` URLs resolve.
-async function syncMapIconsFromRemote() {
-  try {
-    const apiUrl = `https://api.github.com/repos/${KERNELS_REPO_OWNER}/${KERNELS_REPO_NAME}`
-                 + `/contents/map_icons?ref=${KERNELS_REPO_BRANCH}`;
-    const listing = await _fetchJson(apiUrl);
-    if (!Array.isArray(listing)) return { ok: false, error: 'unexpected GitHub Contents response' };
-
-    const targetDir   = path.join(imagesDir, 'map_icons');
-    const manifestPath = path.join(targetDir, '_remote.json');
-    fs.mkdirSync(targetDir, { recursive: true });
-
-    // Migration: drop any per-file `.sha` sidecars from a previous version
-    // of this sync. Single manifest is the long-term shape.
-    for (const f of fs.readdirSync(targetDir)) {
-      if (f.endsWith('.sha')) {
-        try { fs.unlinkSync(path.join(targetDir, f)); } catch (_) {}
-      }
-    }
-
-    // Load the consolidated SHA manifest (one JSON for the whole dir
-    // instead of N `.sha` sidecars). Tolerate corruption / first run.
-    let manifest = {};
-    if (fs.existsSync(manifestPath)) {
-      try { manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) || {}; }
-      catch (_) { manifest = {}; }
-    }
-
-    let downloaded = 0, skipped = 0, failed = 0;
-    for (const entry of listing) {
-      if (!entry || entry.type !== 'file') continue;
-      const filename = entry.name;
-      if (!filename) continue;
-      if (!/\.(png|webp|jpg|jpeg)$/i.test(filename)) continue;
-      const local = path.join(targetDir, filename);
-      if (manifest[filename] === entry.sha && fs.existsSync(local)) {
-        skipped++; continue;
-      }
-      try {
-        const resp = await fetch(entry.download_url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (sts2-dashboard map-icons sync)' },
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const buf = Buffer.from(await resp.arrayBuffer());
-        fs.writeFileSync(local, buf);
-        manifest[filename] = entry.sha;
-        downloaded++;
-      } catch (e) {
-        failed++;
-        console.warn(`map_icons sync: skipped ${filename} — ${e.message}`);
-      }
-    }
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
-    return { ok: true, downloaded, skipped, failed };
-  } catch (e) {
-    console.warn('map_icons sync: failed —', e.message);
-    return { ok: false, error: e.message };
-  }
-}
-
 async function syncKernelsFromRemote() {
   try {
     // The repo lists kernels via the GitHub Contents API (no manifest needed).
@@ -643,7 +693,6 @@ async function syncKernelsFromRemote() {
 }
 
 ipcMain.handle('sync-kernels-from-remote', () => syncKernelsFromRemote());
-ipcMain.handle('sync-map-icons-from-remote', () => syncMapIconsFromRemote());
 
 ipcMain.handle('open-devtools', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1066,6 +1115,17 @@ async function runPipeline({ force = false } = {}) {
     'images/monsters/**',
     'images/potions/**',
     'images/enchantments/**',
+    // Map assets — backdrops, ancients, boss icon placeholders, ui_atlas
+    // (referenced by .tres files for the room-type icons we slice ourselves),
+    // plus the Spine atlas + sprite-sheet PNGs for the 3 animated bosses
+    // (Ceremonial Beast / False Queen / The Insatiable) which we slice into
+    // standalone <name>_boss_icon.png files via parseSpineAtlas.
+    'images/packed/map/**',
+    'images/map/placeholder/**',
+    'images/atlases/ui_atlas_*.png',
+    'images/atlases/ui_atlas.sprites/map/**',
+    'animations/map/**/boss_node_*.png',
+    'animations/map/**/*_boss_node.atlas',
     '.godot/imported/**',
     'localization/eng/**',
     'fonts/kreon_*.ttf',
@@ -1220,6 +1280,27 @@ async function runPipeline({ force = false } = {}) {
     + (relocate.missing.length ? ` Missing in extraction: ${relocate.missing.join(', ')}.` : ''));
   stageDone('relocate', t0);
 
+  // 7b. Map assets: copy ancient + boss-placeholder PNGs, slice ui_atlas
+  // regions for room-type icons, copy per-act parchment backdrops. Sources
+  // live under rawDir's images/packed/map and images/atlases — both
+  // untouched by the relocate above, so they're still on disk here.
+  if (updateCancelled) return { success: false, cancelled: true };
+  t0 = Date.now();
+  logPhase('map-assets', 'Slicing map node icons + copying backdrops…');
+  try {
+    const mapResult = processStagedMapAssets({
+      stagingDir: rawDir,
+      outputDir:  imagesDir,
+      onProgress: (p) => logPhase('map-assets', p.message),
+    });
+    logPhase('map-assets', `Wrote ${mapResult.icons.length} icons + ${mapResult.backdrops.length} backdrops.`
+      + (mapResult.skipped.length ? ` (${mapResult.skipped.length} atlas slices skipped)` : ''));
+  } catch (e) {
+    // Non-fatal: maps will fall back to letter symbols if assets are missing.
+    logPhase('map-assets', `Map asset extraction failed (non-fatal): ${e.message}`);
+  }
+  stageDone('map-assets', t0);
+
   // 8. Sync kernels + map icons from the GitHub repo. We do this BEFORE
   //    [render] so the render stage's bake walks the freshly-fetched
   //    kernels and produces versioned PNGs in one shot. (The app no
@@ -1235,13 +1316,6 @@ async function runPipeline({ force = false } = {}) {
     logPhase('sync', `Kernel sync: ${syncResult.downloaded} new, ${syncResult.skipped} unchanged${tail}.`);
   } else {
     logPhase('sync', `Kernel sync skipped (${syncResult.error || 'offline'}).`);
-  }
-  const iconResult = await syncMapIconsFromRemote();
-  if (iconResult.ok) {
-    const tail = iconResult.failed ? `, ${iconResult.failed} failed` : '';
-    logPhase('sync', `Map-icons sync: ${iconResult.downloaded} new, ${iconResult.skipped} unchanged${tail}.`);
-  } else {
-    logPhase('sync', `Map-icons sync skipped (${iconResult.error || 'offline'}).`);
   }
   stageDone('sync', t0);
 
@@ -1346,11 +1420,10 @@ app.whenReady().then(() => {
     createWindow('setup.html');
   }
 
-  // Best-effort syncs from GitHub — fire-and-forget so launch isn't blocked
-  // by network latency. Silent on failure; the pipeline runs them again on
-  // any subsequent Update Resources click.
+  // Best-effort kernel sync from GitHub — fire-and-forget so launch isn't
+  // blocked by network latency. Silent on failure; the pipeline runs it
+  // again on any subsequent Update Resources click.
   syncKernelsFromRemote().catch(() => {});
-  syncMapIconsFromRemote().catch(() => {});
 
   app.on('activate', () => {
     if (mainWindow === null) {

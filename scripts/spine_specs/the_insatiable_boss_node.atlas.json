@@ -1,0 +1,21 @@
+{
+  "atlas": "the_insatiable_boss_node.atlas",
+  "canvas": {
+    "w": 750,
+    "h": 750
+  },
+  "parts": [
+    {
+      "region": "bod_black",
+      "x": 141,
+      "y": 338,
+      "rotation": 0
+    },
+    {
+      "region": "head_black",
+      "x": 190,
+      "y": 67,
+      "rotation": 0
+    }
+  ]
+}

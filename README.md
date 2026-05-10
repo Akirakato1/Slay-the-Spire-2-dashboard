@@ -54,6 +54,15 @@ A full-screen overlay that walks through the run node by node. Use the arrows or
 
 Each step shows: HP / Max HP / Gold with deltas, potions and relics held (newly acquired ones highlighted), card rewards offered (with the picked card highlighted, multiple rewards split into rows), shop inventory with purchases highlighted, and any cards added / removed / upgraded / transformed / enchanted. The current deck is rendered at the bottom. Co-op runs keep the player tabs in the header so you can switch players without losing your place.
 
+### Map Side Panel
+
+![Deck stepper map side panel](docs/screenshots/03b-deck-stepper-map.png)
+
+Click **Show Map** (top-right of the node header, or press **M**) to expand the modal with the act map for the current step. The map is reconstructed from the run's seed using the same algorithm as the game, then overlaid with the path you actually took (gold) and a halo on every visited node. The current step's node is highlighted in bright gold.
+
+- **Click any node on your path** to jump the deck stepper directly to that step — handy for navigating long runs.
+- **← Act / Act → buttons** at the top jump to the first node (Neow / ancient) of the previous or next act.
+
 ---
 
 ## Insights

@@ -1076,9 +1076,72 @@
       border: 1px solid var(--border-gold);
       border-radius: var(--radius-lg);
       width: 94vw; max-width: 1120px; height: 88vh;
+      display: flex; flex-direction: row;            /* main pane + map panel */
+      overflow: hidden;
+      transition: max-width 0.18s ease;
+    }
+    #deckStepperModal.with-map { max-width: 1510px; }
+    #stepperMain {
+      flex: 1 1 auto; min-width: 0;
       display: flex; flex-direction: column;
       overflow: hidden;
     }
+    #stepperMapPanel {
+      flex: 0 0 390px; width: 390px;
+      border-left: 1px solid var(--border);
+      background: var(--bg-primary);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #stepperMapNav {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    #stepperMapActLabel {
+      font-size: 0.78rem; color: var(--text-muted);
+      flex: 1; text-align: center;
+    }
+    .stepper-mapnav-btn {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary);
+      font-size: 0.72rem; padding: 4px 10px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .stepper-mapnav-btn:hover:not(:disabled) {
+      background: var(--bg-hover); border-color: var(--gold-dim); color: var(--gold-light);
+    }
+    .stepper-mapnav-btn:disabled { opacity: 0.3; cursor: default; }
+    #stepperMapScroll {
+      flex: 1 1 auto; min-height: 0;
+      overflow-y: auto; overflow-x: hidden;
+      padding: 8px 8px 24px;
+    }
+    #stepperMapScroll svg { display: block; width: 100%; height: auto; }
+
+    /* "Show Map" chip lives inline in the node-header row */
+    .stepper-mapbtn {
+      margin-left: auto;
+      background: var(--bg-card); border: 1px solid var(--gold-dim);
+      border-radius: var(--radius-sm); color: var(--gold-light);
+      font-size: 0.72rem; padding: 4px 10px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .stepper-mapbtn:hover { background: rgba(201,162,39,0.15); border-color: var(--gold); color: var(--gold); }
+    .stepper-mapbtn.active {
+      background: rgba(201,162,39,0.18);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* Map node interactivity */
+    #stepperMapScroll svg, #stepperMapScroll svg * { pointer-events: auto; }
+    .map-node-clickable { cursor: pointer; }
+    .map-node-clickable:hover circle:first-of-type { stroke: #ffe27a; stroke-width: 4; }
+    /* Renderer toggles .map-node-current on the node matching the current step */
+    .map-node-current > circle:first-of-type { stroke: #ffd700; stroke-width: 5; filter: drop-shadow(0 0 4px #ffd700); }
     .stepper-player-tabs { display: flex; gap: 6px; margin-left: auto; }
     .stepper-player-tab {
       background: var(--bg-card); border: 1px solid var(--border);
@@ -1286,7 +1349,7 @@
                      margin-top:3px; font-size:0.65rem; color:var(--text-muted); white-space:nowrap;"></span>
       </div>
       <button class="btn btn-secondary" id="refreshBtn">↻ Refresh</button>
-      <button class="btn btn-secondary" id="devToolsBtn"
+      <button class="btn btn-secondary" id="devToolsBtn" style="display:none;"
               title="Open Chromium DevTools (detached). Useful for inspecting card render hydration, kernel composer state, network calls, console logs.">🛠 DevTools</button>
       <button class="btn btn-secondary" id="changeFolderBtn">Change Folder</button>
       <button class="help-btn" id="helpBtn" title="Help">?</button>
@@ -1644,17 +1707,27 @@
        ═══════════════════════════════════════════════════════════════════════ -->
   <div id="deckStepperOverlay" style="display:none;">
     <div id="deckStepperModal">
-      <div class="stepper-header">
-        <span id="stepperTitle">Deck Build Stepper</span>
-        <div id="stepperPlayerTabs" class="stepper-player-tabs" style="display:none;"></div>
-        <button class="stepper-close" id="stepperCloseBtn" title="Close (Esc)">✕</button>
+      <div id="stepperMain">
+        <div class="stepper-header">
+          <span id="stepperTitle">Deck Build Stepper</span>
+          <div id="stepperPlayerTabs" class="stepper-player-tabs" style="display:none;"></div>
+          <button class="stepper-close" id="stepperCloseBtn" title="Close (Esc)">✕</button>
+        </div>
+        <div class="stepper-nav">
+          <button class="stepper-nav-btn" id="stepperPrevBtn" title="Previous (←)">&#8592;</button>
+          <span class="stepper-step-info" id="stepperStepInfo"></span>
+          <button class="stepper-nav-btn" id="stepperNextBtn" title="Next (→)">&#8594;</button>
+        </div>
+        <div id="stepperBody" class="stepper-body"></div>
       </div>
-      <div class="stepper-nav">
-        <button class="stepper-nav-btn" id="stepperPrevBtn" title="Previous (←)">&#8592;</button>
-        <span class="stepper-step-info" id="stepperStepInfo"></span>
-        <button class="stepper-nav-btn" id="stepperNextBtn" title="Next (→)">&#8594;</button>
+      <div id="stepperMapPanel" style="display:none;">
+        <div id="stepperMapNav">
+          <button id="stepperMapPrevActBtn" class="stepper-mapnav-btn" title="Previous act">&#8592; Act</button>
+          <span id="stepperMapActLabel"></span>
+          <button id="stepperMapNextActBtn" class="stepper-mapnav-btn" title="Next act">Act &#8594;</button>
+        </div>
+        <div id="stepperMapScroll"></div>
       </div>
-      <div id="stepperBody" class="stepper-body"></div>
     </div>
   </div>
 

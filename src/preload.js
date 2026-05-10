@@ -40,11 +40,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Kernel bundle (for historical save reconstruction)
   getKernelsBundle: () => ipcRenderer.invoke('get-kernels-bundle'),
   syncKernelsFromRemote:  () => ipcRenderer.invoke('sync-kernels-from-remote'),
-  syncMapIconsFromRemote: () => ipcRenderer.invoke('sync-map-icons-from-remote'),
 
   // Open Chromium DevTools detached. Useful for inspecting card-render
   // hydration, the kernel composer, network calls, etc.
   openDevTools: () => ipcRenderer.invoke('open-devtools'),
+
+  // Map generation (deck-stepper side panel). Returns
+  //   { ok, svg, pathNodeMap: [{col, row, nodeInAct}], actId, alignment }
+  generateActMap: (runData, actIndex) => ipcRenderer.invoke('generate-act-map', runData, actIndex),
+
+  // One-shot extraction of all map-related image assets (room-type icons,
+  // ancient + boss icons, act backdrops) from the user's PCK into appdata.
+  // Returns { ok, icons:string[], backdrops:string[] } or { ok:false, error }.
+  extractMapAssets: () => ipcRenderer.invoke('extract-map-assets'),
+
+  // Debug helper: re-slice a single Spine boss atlas to a custom output path
+  // so you can preview SPINE_BOSS_OVERRIDES tweaks without redoing extraction.
+  sliceSpineBossTest: (atlasPath, outputPath) =>
+    ipcRenderer.invoke('slice-spine-boss-test', atlasPath, outputPath),
+  onMapAssetsExtractProgress: (cb) => ipcRenderer.on('map-assets-extract-progress', (_e, msg) => cb(msg)),
+  removeMapAssetsExtractListeners: () => ipcRenderer.removeAllListeners('map-assets-extract-progress'),
 
   // Local extraction (Phase 2)
   detectSts2Install:   (customSteamPath) => ipcRenderer.invoke('detect-sts2-install', customSteamPath),

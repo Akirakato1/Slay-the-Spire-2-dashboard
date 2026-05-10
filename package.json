@@ -1,6 +1,6 @@
 {
   "name": "sts2-dashboard",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Slay the Spire 2 Run Dashboard",
   "main": "src/main.js",
   "scripts": {

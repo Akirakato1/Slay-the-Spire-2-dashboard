@@ -1,0 +1,27 @@
+{
+  "atlas": "ceremonial_beast_boss_node.atlas",
+  "canvas": {
+    "w": 1000,
+    "h": 1000
+  },
+  "parts": [
+    {
+      "region": "Layer 42",
+      "x": 326,
+      "y": 514,
+      "rotation": 180
+    },
+    {
+      "region": "Layer 44",
+      "x": 517,
+      "y": 26,
+      "rotation": 180
+    },
+    {
+      "region": "Layer 46",
+      "x": 114,
+      "y": 20,
+      "rotation": 180
+    }
+  ]
+}
