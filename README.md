@@ -8,7 +8,7 @@ A desktop statistics dashboard for **Slay the Spire 2** run history. Watches you
 
 1. Launch `STS2 Dashboard 1.0.2.exe`.
 2. On first run, browse to your STS2 history folder (where the game writes `.run` files) → **Continue to Dashboard**.
-3. Click **Update Resources** in the header to download wiki data (relic/card images and descriptions). One-time step.
+3. Game asset extraction parsing pipeline will start automatically, refer to Update Resources section for details.
 
 The folder is remembered; future launches go straight to the dashboard.
 
