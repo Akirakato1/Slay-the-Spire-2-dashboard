@@ -1,6 +1,6 @@
 # STS2 Dashboard
 
-A desktop statistics dashboard for **Slay the Spire 2** run history. Watches your `.run` folder, parses every run, and shows stats, run details, deck evolution + map render, and aggregate insights. Displays your deck and can step through you choices throughout the run with the patch accurate card + relic descrtiptions. Share runs with friends
+A desktop statistics dashboard for **Slay the Spire 2** run history. Watches your `.run` folder, parses every run, and shows stats, run details, deck evolution + map render, and aggregate insights. Displays your deck and can step through you choices throughout the run with the patch accurate card + relic descrtiptions. Share runs with friends. Useful for reviewing your own decision making. 
 
 ---
 
