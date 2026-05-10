@@ -81,18 +81,46 @@ Each table is collapsible and sortable. Insight rows respect the same filters as
 
 ## Update Resources
 
-Card and relic art, descriptions, and event/potion data come from [slaythespire.wiki.gg](https://slaythespire.wiki.gg) — they aren't bundled with the app.
+![Update Resources pipeline log](docs/screenshots/05-update-resources.png)
 
-**On first launch the update runs automatically** when no cached data is detected, so the dashboard is fully populated by the time it opens. After that, click **🔄 Update Resources** in the header to re-scrape on demand — do this whenever a new patch adds cards, relics, or events to the wiki.
+All game data — card art, relic icons, descriptions, events, potions, the map atlases — is extracted at runtime from your local **Slay the Spire 2** install. Nothing is bundled with the dashboard or scraped from a wiki, so the data always matches your installed patch byte-for-byte.
 
-What gets downloaded:
+**On first launch the pipeline runs automatically** when no cached data is detected. After that, click **🔄 Update Resources** in the header any time a new STS2 patch ships and you want the dashboard to pick up the new content.
 
-- `relics.json`, `cards.json`, `enchantments.json`, `events.json`, `potions.json`
-- All matching images (relic icons, card art, enchantment badges, event splash images, potion icons, map node icons)
+### What the pipeline does
 
-Progress is logged live in a panel and can be cancelled at any time. The header label next to the button shows the date of the last successful update.
+1. **Detect** your STS2 Steam install (manual fallback if auto-detect fails).
+2. **Install tools** (first run only) — [GDRE Tools](https://github.com/GDRETools/gdsdecomp) for unpacking Godot's PCK and [dnSpy](https://github.com/dnSpyEx/dnSpy) for decompiling `sts2.dll`. Cached under `%APPDATA%\sts2-dashboard\Tools\`; subsequent runs skip this step.
+3. **Extract** the game's PCK — pulls images (cards, relics, events, ancients, monsters, potions, enchantments, map backdrops, `ui_atlas`), fonts, and English localization into a scratch dir.
+4. **Decompile** `sts2.dll` into ~3,300 readable C# source files.
+5. **Parse** the decompiled C# with JS-ported [spire-codex](https://github.com/ptrlrd/spire-codex) parsers to produce `cards.json`, `relics.json`, `events.json`, `potions.json`, `enchantments.json`.
+6. **Simplify** into the dashboard's render-ready schema.
+7. **Relocate** extracted images into `Assets/images/` so the renderer can reference them via the `appdata://` protocol.
+8. **Map assets** — slice the `ui_atlas` for room-type icons (monster / elite / shop / rest / treasure / ?), copy the per-ancient and per-boss placeholder PNGs, compose the three Spine-atlas bosses (Ceremonial Beast / False Queen / The Insatiable) per `scripts/spine_specs/`, and copy each act's parchment backdrop strips.
+9. **Sync kernels** from this repo — small JSON overrides used to reconstruct period-accurate stats for runs played on older patches.
+10. **Render cards** — bakes every card (base + upgraded, plus Mad-Science variants) to a static PNG via the dashboard's canvas-2D renderer. This is the slow stage; expect ~1–2 minutes on first run.
+11. **Cleanup** — drops the per-card portraits and the extraction scratch dir once the rendered PNGs are on disk.
 
-Cached data lives at `%APPDATA%\sts2-dashboard\Assets\data\` and `Assets\images\`.
+Each stage logs progress live in a panel and can be cancelled at any time. The header label next to the button shows the date of the last successful update.
+
+### Where things land
+
+```
+%APPDATA%\sts2-dashboard\
+├── Assets\
+│   ├── data\            ← cards.json, relics.json, events.json, potions.json, enchantments.json
+│   ├── images\          ← cards/, relics/, events/, ancients/, monsters/, potions/, enchantments/,
+│   │                      map_icons/ (room + ancient + boss icons), map_backdrops/<act>/
+│   ├── shells/          ← pre-rendered card frames (Strategy B intermediate)
+│   ├── data-extracted/  ← raw parser output (eng/)
+│   ├── kernels-remote/  ← period-accurate stat overrides synced from this repo
+│   └── settings\
+└── Tools\
+    ├── gdre\            ← GDRE Tools install
+    └── dnspy\           ← dnSpy Console install
+```
+
+To force a fresh extraction from scratch, delete `Assets\data\` and `Assets\images\` and re-run the pipeline. To re-pull just the tools, also clear `Tools\`.
 
 ---
 
