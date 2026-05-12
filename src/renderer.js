@@ -980,11 +980,8 @@ function renderHpGraph(run, playerIdx = 0) {
     const cx  = x.toFixed(1);
     const cy  = iconCY.toFixed(1);
     svg.push(`<g class="graph-node-icon" data-node-idx="${i}" style="cursor:pointer">`);
-    // Dashed outline for unknown/dim variants (icon itself stands alone — no
-    // colored backdrop circle; the PCK-extracted PNGs are self-contained).
-    if (cfg.dim) {
-      svg.push(`<circle cx="${cx}" cy="${cy}" r="${(ICON_R + 1.5).toFixed(1)}" fill="none" stroke="${cfg.color}" stroke-width="1.2" stroke-dasharray="2.5,2" opacity="0.85" style="pointer-events:none"/>`);
-    }
+    // No surrounding ring — the PCK-extracted PNGs (including the question-mark
+    // "unknown" variants) are self-contained and read clearly on their own.
     svg.push(`<image href="appdata://images/map_icons/${cfg.img}" x="${(x - ICON_R).toFixed(1)}" y="${(iconCY - ICON_R).toFixed(1)}" width="${ICON_R * 2}" height="${ICON_R * 2}" style="pointer-events:none"/>`);
     // Invisible hit target on top to capture hover/click
     svg.push(`<circle cx="${cx}" cy="${cy}" r="${ICON_R}" fill="transparent" stroke="none"/>`);
@@ -1383,8 +1380,23 @@ function openRelicPopupByName(name) {
   document.getElementById('relicPopup').style.display = 'flex';
 }
 
-function openCardPopup(cardName) {
-  const data = _mergedLookup('cards', cardsMap, cardName);
+// Optional `character` disambiguates Strike/Defend (and any other class-shared
+// names): cardsMap collapses same-name variants to "last loaded wins", so a
+// bare name lookup for "Strike" can return the wrong class's stats and art.
+// When the caller knows the character (deck/stepper/reward click sites do —
+// they thread the run player's class through data-card-character), we hit
+// cardsByNameChar to pin the right variant.
+function openCardPopup(cardName, character) {
+  let data = null;
+  if (character) {
+    const charKey = normalizeName(cardName) + '|' + character.toLowerCase();
+    const variant = cardsByNameChar.get(charKey);
+    if (variant) {
+      const recon = _reconLookup('cards', cardName);
+      data = recon ? { ...variant, ...recon } : variant;
+    }
+  }
+  if (!data) data = _mergedLookup('cards', cardsMap, cardName);
   document.getElementById('cardPopupName').textContent = data?.name || cardName;
   const metaParts = [];
   if (data?.type)   metaParts.push(data.type);
@@ -1649,6 +1661,25 @@ function renderAllRuns(runs) {
       ? `<span class="run-death">${escHtml(outcome.cause)}</span>`
       : `<span style="color:var(--text-muted);">—</span>`;
 
+    // Act + floor at the end of the run, derived from map_point_history:
+    // - act = (last non-empty act index) + 1, i.e. number of ancients reached
+    // - floor = node count within that final act (ancient is floor 1, then
+    //   each subsequent visited node increments). run.floor_reached itself
+    //   is unreliable in this save schema, so we don't rely on it.
+    let endActFloor = null;
+    const hist = run.map_point_history;
+    if (Array.isArray(hist)) {
+      for (let i = hist.length - 1; i >= 0; i--) {
+        if (Array.isArray(hist[i]) && hist[i].length > 0) {
+          endActFloor = { act: i + 1, floor: hist[i].length };
+          break;
+        }
+      }
+    }
+    const floorCell = endActFloor
+      ? `<span class="run-floor floor-${outcome.type}">A${endActFloor.act}-${endActFloor.floor}</span>`
+      : `<span style="color:var(--text-muted);">—</span>`;
+
     return `
       <tr class="run-row${isFav ? ' favorited' : ''}" data-idx="${globalIdx}">
         <td class="col-fav"><button class="fav-btn${isFav ? ' active' : ''}" title="${isFav ? 'Unfavorite' : 'Favorite'}">★</button></td>
@@ -1658,6 +1689,7 @@ function renderAllRuns(runs) {
         <td class="col-result">${resultBadge}</td>
         <td class="col-date run-date">${date}</td>
         <td class="col-death">${deathCell}</td>
+        <td class="col-floor">${floorCell}</td>
         <td class="col-version">${escHtml(version)}</td>
         <td class="col-dur run-dur">${dur}</td>
         <td class="col-counts"><span class="run-counts">${cardCount}</span></td>
@@ -1676,6 +1708,7 @@ function renderAllRuns(runs) {
           <th class="col-result">Result</th>
           <th class="col-date">Date</th>
           <th class="col-death">Killed By</th>
+          <th class="col-floor">Floor</th>
           <th class="col-version">Version</th>
           <th class="col-dur">Duration</th>
           <th class="col-counts">Cards</th>
@@ -2644,39 +2677,41 @@ async function init() {
     }
   });
 
-  // Enchantment icon click → popup (event delegation on card grid)
+  // Click delegation on the run-detail card grid:
+  //   1. Enchant icon → enchantment popup (must run first; sits on top of card)
+  //   2. Card image → base+upgraded popup, but only when the card actually has
+  //      an upgrade (skips curses, quests, etc.)
   document.getElementById('detailCardGrid').addEventListener('click', (e) => {
-    const btn = e.target.closest('.card-enchant-icon');
-    if (!btn) return;
-    e.stopPropagation();
-    const enchantId = btn.dataset.enchantId;
-    const data = enchantId ? lookupEnchantmentData(enchantId) : null;
-    if (data) openEnchantmentPopup(data);
+    const enchBtn = e.target.closest('.card-enchant-icon');
+    if (enchBtn) {
+      e.stopPropagation();
+      const enchantId = enchBtn.dataset.enchantId;
+      const data = enchantId ? lookupEnchantmentData(enchantId) : null;
+      if (data) openEnchantmentPopup(data);
+      return;
+    }
+    const cardEl = e.target.closest('.card-render-target');
+    if (cardEl?.dataset?.cardName) {
+      const cardData = _mergedLookup('cards', cardsMap, cardEl.dataset.cardName);
+      if (cardData?.canUpgrade) openCardPopup(cardEl.dataset.cardName, cardEl.dataset.cardCharacter);
+    }
   });
 
-  // Close relic/enchantment popup
+  // All popups close on any click anywhere — backdrop, popup content, or the
+  // X — so users don't have to aim for a specific dismissal target. None of
+  // these popups have inner interactive elements that need preserved click
+  // handling, so blanket-closing is safe.
   document.getElementById('relicPopupClose').addEventListener('click', closeRelicPopup);
-  document.getElementById('relicPopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('relicPopup')) closeRelicPopup();
-  });
+  document.getElementById('relicPopup').addEventListener('click', closeRelicPopup);
 
-  // Close card popup
   document.getElementById('cardPopupClose').addEventListener('click', closeCardPopup);
-  document.getElementById('cardPopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('cardPopup')) closeCardPopup();
-  });
+  document.getElementById('cardPopup').addEventListener('click', closeCardPopup);
 
-  // Close event popup
   document.getElementById('eventPopupClose').addEventListener('click', closeEventPopup);
-  document.getElementById('eventPopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('eventPopup')) closeEventPopup();
-  });
+  document.getElementById('eventPopup').addEventListener('click', closeEventPopup);
 
-  // Close potion popup
   document.getElementById('potionPopupClose').addEventListener('click', closePotionPopup);
-  document.getElementById('potionPopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('potionPopup')) closePotionPopup();
-  });
+  document.getElementById('potionPopup').addEventListener('click', closePotionPopup);
 
   // Insights: relic, card, event clicks + sort toggle via event delegation
   document.getElementById('insightsContent').addEventListener('click', (e) => {
@@ -2723,12 +2758,10 @@ async function init() {
     if (!isNaN(idx)) openNodePopup(idx);
   });
 
-  // Close node popup
+  // Close node popup — click anywhere (backdrop, content, or X) closes it.
   const closeNodePopup = () => { document.getElementById('nodePopup').style.display = 'none'; };
   document.getElementById('nodePopupClose').addEventListener('click', closeNodePopup);
-  document.getElementById('nodePopup').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('nodePopup')) closeNodePopup();
-  });
+  document.getElementById('nodePopup').addEventListener('click', closeNodePopup);
 
   // HP Legend popup
   const legendPopup = document.getElementById('hpLegendPopup');
@@ -2753,10 +2786,8 @@ async function init() {
     ];
     iconContainer.innerHTML = NODE_LABELS.map(({ key, label }) => {
       const cfg = NODE_CFG[key];
-      const bg  = cfg.bg === 'none' ? 'transparent' : cfg.bg;
-      const dim = key === 'event' ? ' border:1.5px dashed ' + cfg.color + ';' : '';
       return `<div class="hp-legend-icon-row">
-        <div class="hp-legend-icon-wrap" style="background:${bg};${dim}">
+        <div class="hp-legend-icon-wrap">
           <img src="appdata://images/map_icons/${cfg.img}" alt="${label}"/>
         </div>
         <span>${label}</span>
@@ -2774,10 +2805,11 @@ async function init() {
     legendBtn.closest('.card').appendChild(legendPopup);
     legendPopup.style.display = '';
   });
+  // Any click outside the toggle button closes the legend — including clicks
+  // inside the popup itself. legendBtn's own click handler uses
+  // stopPropagation() so toggling doesn't immediately re-close it.
   document.addEventListener('click', (e) => {
-    if (!legendPopup.contains(e.target) && e.target !== legendBtn) {
-      legendPopup.style.display = 'none';
-    }
+    if (e.target !== legendBtn) legendPopup.style.display = 'none';
   });
 
   // Help overlay
@@ -2788,6 +2820,8 @@ async function init() {
   document.getElementById('helpClose').addEventListener('click', () => {
     helpOverlay.style.display = 'none';
   });
+  // Help overlay keeps the backdrop-only dismiss — its content is long-form
+  // text the user reads, so blanket-closing on any click would be annoying.
   helpOverlay.addEventListener('click', (e) => {
     if (e.target === helpOverlay) helpOverlay.style.display = 'none';
   });
@@ -4604,7 +4638,10 @@ function initDeckStepper() {
   });
 
   // Click delegation: enchant icon → enchantment popup, node name → event popup,
-  // relic chips → relic popup, potion chips → potion popup
+  // relic chips → relic popup, potion chips → potion popup, card image →
+  // base+upgraded popup (only when the card can be upgraded — curses/quests
+  // silently no-op). Card handler is last so the more specific sub-elements
+  // (enchant icon, etc.) take precedence.
   document.getElementById('stepperBody').addEventListener('click', (e) => {
     const enchBtn = e.target.closest('.card-enchant-icon');
     if (enchBtn) {
@@ -4620,6 +4657,11 @@ function initDeckStepper() {
     if (relicChip) { openRelicPopup(relicChip.dataset.relicId); return; }
     const potionChip = e.target.closest('[data-potion-id]');
     if (potionChip) { openPotionPopup(potionChip.dataset.potionId); return; }
+    const cardEl = e.target.closest('.card-render-target');
+    if (cardEl?.dataset?.cardName) {
+      const cardData = _mergedLookup('cards', cardsMap, cardEl.dataset.cardName);
+      if (cardData?.canUpgrade) openCardPopup(cardEl.dataset.cardName, cardEl.dataset.cardCharacter);
+    }
   });
 }
 

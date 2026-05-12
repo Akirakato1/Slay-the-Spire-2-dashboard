@@ -148,6 +148,7 @@
     .runs-table .col-result { width: 90px; }
     .runs-table .col-date   { width: 120px; }
     .runs-table .col-death   { }
+    .runs-table .col-floor   { width: 68px; text-align: right; font-variant-numeric: tabular-nums; }
     .runs-table .col-version { width: 80px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 0.85rem; }
     .runs-table .col-dur     { width: 80px; text-align: right; }
     .runs-table .col-counts  { width: 56px; text-align: right; }
@@ -157,6 +158,10 @@
     .run-char  { font-weight: 600; color: var(--text-primary); }
     .run-date  { color: var(--text-muted); font-size: 0.8rem; }
     .run-death { color: var(--text-secondary); font-style: italic; }
+    .run-floor { font-weight: 600; }
+    .run-floor.floor-win       { color: var(--green); }
+    .run-floor.floor-loss      { color: #e74c3c; }
+    .run-floor.floor-abandoned { color: var(--text-muted); }
     .run-dur   { color: var(--text-muted); font-size: 0.8rem; }
     .run-counts { font-size: 0.75rem; color: var(--text-muted); }
 
@@ -436,8 +441,8 @@
     .hp-legend-icons { display: flex; flex-direction: column; gap: 5px; }
     .hp-legend-icon-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
     .hp-legend-icon-wrap {
-      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      width: 22px; height: 22px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
     .hp-legend-icon-wrap img { width: 22px; height: 22px; object-fit: contain; }
 
@@ -608,6 +613,7 @@
       position: relative;
       border-radius: 5px;
       overflow: hidden;
+      cursor: pointer;
       transition: transform 0.15s, box-shadow 0.15s;
     }
     .card-grid-item:hover {
@@ -1293,6 +1299,7 @@
     }
     .stepper-card-wrap {
       position: relative; border-radius: 4px; overflow: hidden;
+      cursor: pointer;
       transition: transform 0.12s;
     }
     .stepper-card-wrap .card-enchant-icon,
@@ -1754,11 +1761,15 @@
           <div class="help-items">
             <div class="help-item">
               <span class="help-item-label">History Folder</span>
-              <span class="help-item-desc">On first launch, point the app at the folder where STS2 saves your <span class="help-kbd">.run</span> files. Typical path on Windows: <span class="help-kbd">%APPDATA%\Roaming\STS2\history</span>. The folder is watched live — new runs appear automatically.</span>
+              <span class="help-item-desc">On first launch, point the app at the folder where STS2 writes your <span class="help-kbd">.run</span> files. Typical Windows path: <span class="help-kbd">%APPDATA%\SlayTheSpire2\Steam\&lt;SteamID&gt;\Profile\History</span>. The folder is watched live — new runs appear automatically.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Update Resources</span>
-              <span class="help-item-desc">Downloads relic, card, enchantment, and event data (images + descriptions) from the STS2 wiki. No external tools required. Run this once before first use and again whenever new content is added to the game.</span>
+              <span class="help-item-desc">Extracts card / relic / event / map data and artwork from your locally installed STS2 game files. The first run downloads two small helper tools (GDRE Tools + ILSpy CLI) and then runs the pipeline; subsequent updates reuse them. Re-run after game patches so card text and art stay current.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Version Reconciliation</span>
+              <span class="help-item-desc">Saves carry the build they were played on. When you view an older run, the dashboard composes period-accurate card/relic stats from kernel data so descriptions and stats match what you actually saw in-game, not the current patch.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Change Folder</span>
@@ -1768,31 +1779,31 @@
         </div>
 
         <div class="help-section">
-          <h3>Run List</h3>
+          <h3>Run List (Home Page)</h3>
           <div class="help-items">
             <div class="help-item">
               <span class="help-item-label">Columns</span>
-              <span class="help-item-desc">Character, outcome (Win / Loss / Abandoned), ascension level, floor reached, run duration, and date. Coop runs show all players and a <em>CO-OP</em> badge.</span>
-            </div>
-            <div class="help-item">
-              <span class="help-item-label">Sorting</span>
-              <span class="help-item-desc">Click any column header to sort by that field. Click again to toggle ascending / descending.</span>
+              <span class="help-item-desc">Favorite ★, Copy 📋, Character, Asc, Result (Win / Loss / Abandoned), Date, Killed By, Floor (shown as <em>A&lt;act&gt;-&lt;floor&gt;</em> and tinted green for wins, red for defeats), Version, Duration, and final deck size. Co-op runs show both players and a <em>CO-OP</em> badge.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Favorites</span>
-              <span class="help-item-desc">Click the ★ star on a row to favorite a run. Favorited runs show a gold star. Use the <em>Favorites only</em> filter to see just your starred runs.</span>
+              <span class="help-item-desc">Click ★ on a row (or on the detail page) to star a run. Use <em>★ Favorites only</em> in the filter bar to see just your starred runs.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Copy Run</span>
-              <span class="help-item-desc">Click 📋 on any row to copy the actual <span class="help-kbd">.run</span> file to your clipboard — paste it directly into a folder, Discord, etc.</span>
+              <span class="help-item-desc">Click 📋 on a row to copy the underlying <span class="help-kbd">.run</span> file to your clipboard — paste it into a folder, Discord attachment, etc.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Open Run</span>
-              <span class="help-item-desc">The <em>📂 Open Run</em> header button lets you open any <span class="help-kbd">.run</span> file from disk or a Pastebin URL — including runs shared by other players — and view its full detail page. Opened runs are saved into a <em>Shared Runs</em> folder and listed under the <em>Shared</em> mode tab; they don't mix into your own statistics.</span>
+              <span class="help-item-desc">The <em>📂 Open Run</em> header button opens any <span class="help-kbd">.run</span> file from disk or a Pastebin URL — including runs shared by other players. Imported runs land in a <em>Shared Runs</em> folder and only appear under the <em>Shared</em> mode filter; they don't mix into your own statistics.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Pastebin Export</span>
+              <span class="help-item-desc">On a run's detail page, the <em>📤 Pastebin</em> button uploads the <span class="help-kbd">.run</span> JSON to Pastebin and copies the URL to your clipboard. You'll be prompted once for a Pastebin API key (saved locally).</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Pagination</span>
-              <span class="help-item-desc">Runs are shown 12 per page. Use the page controls below the table to navigate.</span>
+              <span class="help-item-desc">Runs are shown 12 per page. Use the page controls in the Runs card header, or just press <span class="help-kbd">←</span> / <span class="help-kbd">→</span> from the home screen to flip pages.</span>
             </div>
           </div>
         </div>
@@ -1801,36 +1812,32 @@
           <h3>Filters</h3>
           <div class="help-items">
             <div class="help-item">
-              <span class="help-item-label">Search</span>
-              <span class="help-item-desc">Type a character name, relic name, or card name to filter runs that include it. Multiple tokens narrow the results further.</span>
+              <span class="help-item-label">Has / Exclude Card or Relic</span>
+              <span class="help-item-desc">Two token-based search boxes — anything typed into <em>Has</em> requires that card or relic to appear in the run; anything in <em>Exclude</em> hides runs that contain it. Multiple tokens stack as AND.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Mode</span>
-              <span class="help-item-desc">Toggle between <em>All</em>, <em>Solo</em>, <em>Co-op</em>, and <em>Shared</em>. <em>Shared</em> shows runs imported via 📂 Open Run (from disk or Pastebin), saved separately from your own history.</span>
+              <span class="help-item-desc">Toggle <em>All</em> / <em>Solo</em> / <em>Co-op</em> / <em>Shared</em>. <em>Shared</em> is the bucket for runs you opened via 📂 Open Run.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Character</span>
-              <span class="help-item-desc">Filter to a specific character or keep <em>All</em>.</span>
+              <span class="help-item-desc">Filter to a single class (Ironclad / Silent / Defect / Necrobinder / Regent) or all.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Ascension</span>
-              <span class="help-item-desc">Click <em>Ascension</em> to open a multi-select of all ascension levels present in your runs.</span>
+              <span class="help-item-label">Ascension &amp; Version</span>
+              <span class="help-item-desc">Multi-select pickers showing every ascension level and every game build present in your runs. Use <em>Check / Uncheck All</em> inside each picker to quickly invert.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Win Only / Abandoned</span>
-              <span class="help-item-desc">Tick <em>Wins only</em> to show only victorious runs, or <em>Include abandoned</em> to show runs that were quit mid-way.</span>
+              <span class="help-item-label">Outcome</span>
+              <span class="help-item-desc"><em>Wins only</em> restricts to victories. <em>★ Favorites only</em> restricts to starred runs. <em>Abandoned Runs</em> dropdown (Include / Exclude / Only) controls whether quit-mid-run files appear.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Min Duration</span>
-              <span class="help-item-desc">Hide very short runs (e.g., crashes or accidental starts) by setting a minimum run length in minutes.</span>
-            </div>
-            <div class="help-item">
-              <span class="help-item-label">Favorites Only</span>
-              <span class="help-item-desc">Show only runs you have starred.</span>
+              <span class="help-item-desc">Hide crashes and accidental restarts with a minimum run length in minutes.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Reset Filters</span>
-              <span class="help-item-desc">Clears all active filters back to their defaults in one click.</span>
+              <span class="help-item-desc">One-click reset of every filter to its default.</span>
             </div>
           </div>
         </div>
@@ -1843,66 +1850,112 @@
               <span class="help-item-desc">Click anywhere on a run row to open its detail page.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Journey Graph</span>
-              <span class="help-item-desc">Shows your HP (green line) and max HP (blue dashed) across every node of the run. Click any node icon to see what happened at that stop — fight, event, shop, rest site, etc.</span>
+              <span class="help-item-label">HP Journey Graph</span>
+              <span class="help-item-desc">Shows your HP (green line) and max HP (blue dashed) across every node of the run, with each node's icon below. Click an icon to pop a summary of what happened at that stop — encounter / event / shop / rest action / chest contents. The <em>?</em> legend in the corner explains each icon.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Relics</span>
-              <span class="help-item-desc">All relics held at run end. Click any relic icon to see its description, rarity, and character.</span>
+              <span class="help-item-desc">All relics held at run end. Click any icon to see description, rarity, and source class.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Deck</span>
-              <span class="help-item-desc">Full deck at run end. Upgraded cards are shown with their upgraded art. Click the enchantment badge on a card to view its description. Use the <em>Sort</em> button to order by type → rarity → alphabetical; click again to restore original order.</span>
+              <span class="help-item-desc">Final deck rendered with the canvas card renderer (same art the game uses). Click <em>any card</em> to pop a base + upgraded side-by-side view (curses / quests have no upgrade and don't pop). Click the enchantment badge to view the enchantment text. <em>Sort</em> reorders by type → rarity → name; clicking it again restores deck order.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Co-op Player Tabs</span>
-              <span class="help-item-desc">In co-op runs, tabs appear above the relics section to switch between players. Each tab shows that player's HP graph, relics, and deck.</span>
+              <span class="help-item-desc">In co-op runs, tabs above the relics section flip between players' HP graphs, relics, and decks.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Favorite &amp; Copy</span>
-              <span class="help-item-desc">Star a run or copy its <span class="help-kbd">.run</span> file directly from the detail nav bar.</span>
+              <span class="help-item-label">Favorite / Copy / Pastebin</span>
+              <span class="help-item-desc">Detail-page nav bar exposes star, copy-to-clipboard, and Pastebin upload for the open run.</span>
             </div>
           </div>
         </div>
 
         <div class="help-section">
-          <h3>Insights Tab</h3>
+          <h3>Deck Stepper 🃏</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Opening</span>
+              <span class="help-item-desc">From a run's detail page, click <em>🃏 Deck Stepper</em> to walk the run node-by-node. Each step shows the deck right before that node, plus everything that happened there (rewards picked, cards added / removed / upgraded / transformed / enchanted, shop inventory, relic / rest-site choices).</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Navigation</span>
+              <span class="help-item-desc">Use the ← / → arrow buttons or the <span class="help-kbd">←</span> <span class="help-kbd">→</span> keys to step through. <span class="help-kbd">Esc</span> closes the stepper.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Map Panel</span>
+              <span class="help-item-desc">Click <em>Show Map</em> (or press <span class="help-kbd">M</span>) to open the generated act map on the side. The visited path is highlighted in gold, the current step pulses, and any node on the path can be clicked to jump straight there. For runs that ended in defeat or abandon mid-act, the final node is marked with a red X.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Interactive Cards</span>
+              <span class="help-item-desc">Click any card in the current deck or in a reward / added / upgraded section to pop its base + upgraded view. Click the node name (when it's an event) to pop the event description. Relic and potion chips are clickable too.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Insights Tab 📊</h3>
           <div class="help-items">
             <div class="help-item">
               <span class="help-item-label">Scope</span>
-              <span class="help-item-desc">Insights always reflect whatever filters are currently active in the run list — so you can drill into stats for a specific character, ascension level, or game mode.</span>
+              <span class="help-item-desc">Every chart reflects whatever filters are active in the home-page filter bar — so you can drill into stats for a specific character, ascension band, version, or "has card X" cohort.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Relic / Card Win Rate</span>
-              <span class="help-item-desc">Win rate for runs that included each relic or card. Use the <em>Min samples</em> slider to hide entries with too few data points.</span>
+              <span class="help-item-label">Win-Rate Tables</span>
+              <span class="help-item-desc">Separate tables for <em>Relic</em>, <em>Card</em>, <em>Event</em>, and <em>Ancient</em> win rates. Each table has a <em>Min samples</em> slider to hide low-confidence rows, and a sort arrow to flip ascending / descending.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Best Relic Pairs</span>
-              <span class="help-item-desc">Win rate for runs that contained both relics simultaneously. Slider filters by sample count.</span>
+              <span class="help-item-label">Best Pairs / Duos / Trios</span>
+              <span class="help-item-desc">Win rate for runs containing two relics, two cards, or three cards simultaneously. Card combos are computed over the top 30 (duos) / 20 (trios) most-seen cards so the results stay meaningful.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Best Card Duos &amp; Trios</span>
-              <span class="help-item-desc">Win rate for runs containing both (or all three) cards at once, computed over the top 30 / 20 most-seen cards to keep combinations meaningful.</span>
-            </div>
-            <div class="help-item">
-              <span class="help-item-label">Card Upgrade Value</span>
-              <span class="help-item-desc">Compares win rate when a card was present in its base form vs. upgraded form, showing the delta. A large positive delta means upgrading that card tends to correlate with better runs.</span>
+              <span class="help-item-label">Card Upgrade Impact</span>
+              <span class="help-item-desc">Compares win rate when a card appeared in base form vs. upgraded form, plus the delta. Large positive deltas suggest upgrading that card is a strong signal of better runs.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Strike / Defend Removal</span>
-              <span class="help-item-desc">Win rate split by whether you removed all copies of Strike or Defend from your deck vs. keeping at least one.</span>
+              <span class="help-item-desc">Win rate split by whether all copies of Strike (or Defend) were removed from the deck vs. kept.</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Deck Size vs Win Rate</span>
-              <span class="help-item-desc">Win rate bucketed by final deck size, showing whether smaller or larger decks perform better in your runs.</span>
+              <span class="help-item-label">Deck Size Buckets</span>
+              <span class="help-item-desc">Win rate bucketed by final deck size — does your data favor thin or fat decks?</span>
             </div>
             <div class="help-item">
-              <span class="help-item-label">Most Picked Relics &amp; Cards</span>
-              <span class="help-item-desc">Frequency ranking — how often each relic or card appeared across all filtered runs. Starter relics and starter cards are excluded.</span>
+              <span class="help-item-label">Most Picked</span>
+              <span class="help-item-desc">Frequency rankings for relics and cards across all filtered runs, excluding starters.</span>
             </div>
             <div class="help-item">
               <span class="help-item-label">Clickable Items</span>
-              <span class="help-item-desc">Click any relic icon or name to see its full description. Click any <span style="border-bottom:1px dashed var(--border)">card name</span> to view the base and upgraded card images side by side.</span>
+              <span class="help-item-desc">Click any relic icon / name to see its description. Click any <span style="border-bottom:1px dashed var(--border)">card name</span> for base + upgraded side-by-side. Section headers collapse / expand entire sections.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Keyboard Shortcuts</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Home page</span>
+              <span class="help-item-desc"><span class="help-kbd">←</span> <span class="help-kbd">→</span> — paginate runs.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Deck Stepper</span>
+              <span class="help-item-desc"><span class="help-kbd">←</span> <span class="help-kbd">→</span> step through nodes · <span class="help-kbd">M</span> toggle the map · <span class="help-kbd">Esc</span> close.</span>
+            </div>
+            <div class="help-item">
+              <span class="help-item-label">Anywhere</span>
+              <span class="help-item-desc"><span class="help-kbd">Alt</span>+<span class="help-kbd">←</span> / <span class="help-kbd">Alt</span>+<span class="help-kbd">→</span> browser-style back / forward · <span class="help-kbd">Esc</span> closes any open popup.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h3>Popups</h3>
+          <div class="help-items">
+            <div class="help-item">
+              <span class="help-item-label">Dismissing</span>
+              <span class="help-item-desc">Card / relic / event / potion / node popups close on any click (backdrop, content, or the ✕). Press <span class="help-kbd">Esc</span> to close them via keyboard. This Help overlay is the exception — only the ✕ or clicking outside the panel dismisses it, so you can read freely.</span>
             </div>
           </div>
         </div>

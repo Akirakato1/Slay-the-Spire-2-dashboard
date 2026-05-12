@@ -88,6 +88,21 @@ function computeUpgradedKeywords(baseKeywords, upgrade) {
   return [...set];
 }
 
+// Some extracted cards (Scrawl, Calculated Gamble, Royal Gamble) have a
+// self-contradicting `keywords` array that includes a keyword the upgrade
+// also claims to *add* via `upgrade.add_<kw>`. By definition, an add_<kw>
+// upgrade flag means the keyword is NOT on the base card — strip it out
+// so injectKeywords doesn't paint it onto the base description.
+function computeBaseKeywords(parserKeywords, upgrade) {
+  const set = new Set(parserKeywords || []);
+  if (upgrade && typeof upgrade === 'object') {
+    for (const [flag, kw] of Object.entries(UPGRADE_KW_ADD)) {
+      if (upgrade[flag]) set.delete(kw);
+    }
+  }
+  return [...set];
+}
+
 // ── Cards ───────────────────────────────────────────────────────────────────
 //
 // {
@@ -131,7 +146,7 @@ function simplifyCards(parsed) {
       type:                c.type_key   || c.type   || 'Unknown',
       canUpgrade:          !!(c.upgrade || c.upgrade_description),
       multiplayer:         false,                       // not yet extracted by parser
-      description:         injectKeywords(c.description || '', c.keywords),
+      description:         injectKeywords(c.description || '', computeBaseKeywords(c.keywords, c.upgrade)),
       // Upgraded description body falls back to the base description when
       // the parser produced no rewrite (cost / keyword-only upgrades). The
       // keyword set is recomputed from base ± upgrade.add_*/remove_* so

@@ -473,9 +473,23 @@ ipcMain.handle('generate-act-map', (_event, runData, actIndex) => {
       return { ok: false, error: `actIndex ${actIndex} out of range (0..${acts.length - 1})` };
     }
     const actId        = acts[actIndex];
-    const visited      = runData.map_point_history?.[actIndex] || null;
+    const histories    = runData.map_point_history || [];
+    const visited      = histories[actIndex] || null;
     const isMultiplayer = (runData.players?.length || 1) > 1
                        || (runData.game_mode && /(co_op|coop|multi)/i.test(String(runData.game_mode)));
+
+    // The "death act" is the final act with any visited nodes when the run
+    // didn't end in victory (defeat or abandon). For it, allow alignPath to
+    // accept a partial path (not ending in boss) and mark the player's last
+    // node with a red X overlay in the SVG.
+    let lastActWithVisits = -1;
+    for (let i = histories.length - 1; i >= 0; i--) {
+      if (Array.isArray(histories[i]) && histories[i].length > 0) {
+        lastActWithVisits = i;
+        break;
+      }
+    }
+    const isDeathAct = !runData.win && actIndex === lastActWithVisits;
 
     const { graph, alignment } = _genActMap({
       actId, actIndex,
@@ -484,6 +498,7 @@ ipcMain.handle('generate-act-map', (_event, runData, actIndex) => {
       modifiers:     runData.modifiers,
       isMultiplayer,
       visited,
+      allowPartialPath: isDeathAct,
     });
 
     // Pick the boss model_id(s) and ancient model_id from visit history so the
@@ -513,6 +528,7 @@ ipcMain.handle('generate-act-map', (_event, runData, actIndex) => {
       clickableSteps: pathNodeMap,
       iconsDir:     path.join(mapAssetsDir, 'map_icons'),
       backdropsDir: path.join(mapAssetsDir, 'map_backdrops'),
+      markLastPathNodeAsDeath: isDeathAct && alignment.ok && (alignment.path?.length || 0) > 0,
     });
 
     return {

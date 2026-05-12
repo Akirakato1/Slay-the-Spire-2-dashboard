@@ -36,8 +36,13 @@ function visitedTypeForEntry(entry) {
  * Walk visited[] over the graph. visited[0] is expected to be the Ancient
  * (start) entry; we anchor at startingPoint and consume children for each
  * subsequent entry.
+ *
+ * opts.allowPartial — when true, do not require the last visited entry to
+ * be a Boss. Used for the act in which a defeat/abandon ended the run, so
+ * the partial path can still be aligned and drawn.
  */
-function alignPath(graph, visited) {
+function alignPath(graph, visited, opts = {}) {
+  const allowPartial = !!opts.allowPartial;
   const types = visited.map(visitedTypeForEntry);
 
   // Sanity-check the bookends — if these don't match, the run schema and our
@@ -45,7 +50,7 @@ function alignPath(graph, visited) {
   if (types[0] !== MapPointType.Ancient) {
     return { ok: false, reason: `expected ancient at index 0, got ${visited[0]?.map_point_type}`, triedPath: [] };
   }
-  if (types[types.length - 1] !== MapPointType.Boss) {
+  if (!allowPartial && types[types.length - 1] !== MapPointType.Boss) {
     return { ok: false, reason: `expected boss at last index, got ${visited[visited.length-1]?.map_point_type}`, triedPath: [] };
   }
 

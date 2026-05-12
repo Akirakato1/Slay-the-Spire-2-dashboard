@@ -58,7 +58,7 @@ function findAncientModelId(visited) {
  *   isMultiplayer
  *   visited      — runData.map_point_history[actIndex] (the per-node array)
  */
-function generateActMap({ actId, actIndex, seedString, ascension, modifiers, isMultiplayer, visited }) {
+function generateActMap({ actId, actIndex, seedString, ascension, modifiers, isMultiplayer, visited, allowPartialPath }) {
   const cfg     = getActConfig(actId);
   const seedU32 = seedToUint32(seedString);
 
@@ -80,7 +80,9 @@ function generateActMap({ actId, actIndex, seedString, ascension, modifiers, isM
   });
   pruneAndRepair(graph);
 
-  const alignment = visited ? alignPath(graph, visited) : { ok: false, reason: 'no visited history' };
+  const alignment = visited
+    ? alignPath(graph, visited, { allowPartial: !!allowPartialPath })
+    : { ok: false, reason: 'no visited history' };
   return { graph, alignment };
 }
 

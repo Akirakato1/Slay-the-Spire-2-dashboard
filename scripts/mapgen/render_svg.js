@@ -216,6 +216,13 @@ function renderSvg(graph, pathNodes, opts = {}) {
   }
   const pathNodeSet = new Set(pathNodes || []);
 
+  // For defeat/abandon acts, the last visited node is where the run ended —
+  // draw a red X over its icon. Caller decides when this applies; we just
+  // render the X if asked and there's a node to mark.
+  const deathNode = (opts.markLastPathNodeAsDeath && pathNodes && pathNodes.length > 0)
+    ? pathNodes[pathNodes.length - 1]
+    : null;
+
   const symbolDefs   = new Map();   // symbolId → fname
   const nodeSymbolId = new Map();   // node ref → symbolId
   let bossIdxCounter = 0;
@@ -334,6 +341,19 @@ function renderSvg(graph, pathNodes, opts = {}) {
     } else {
       const sym = FALLBACK_SYMBOL[p.PointType] || '?';
       out.push(`<text x="${x}" y="${y + 5 * scale}" text-anchor="middle" fill="#222" font-size="${14 * scale}" font-weight="bold">${sym}</text>`);
+    }
+
+    if (p === deathNode) {
+      const ext  = (NODE_SZ / 2 + 2) * scale;
+      const swO  = 6 * scale;
+      const swI  = 3 * scale;
+      const xa = (x - ext).toFixed(2), xb = (x + ext).toFixed(2);
+      const ya = (y - ext).toFixed(2), yb = (y + ext).toFixed(2);
+      // Black backstroke for contrast against the parchment + icon, then red on top.
+      out.push(`<line x1="${xa}" y1="${ya}" x2="${xb}" y2="${yb}" stroke="#000" stroke-width="${swO}" stroke-linecap="round" pointer-events="none"/>`);
+      out.push(`<line x1="${xa}" y1="${yb}" x2="${xb}" y2="${ya}" stroke="#000" stroke-width="${swO}" stroke-linecap="round" pointer-events="none"/>`);
+      out.push(`<line x1="${xa}" y1="${ya}" x2="${xb}" y2="${yb}" stroke="#e74c3c" stroke-width="${swI}" stroke-linecap="round" pointer-events="none"/>`);
+      out.push(`<line x1="${xa}" y1="${yb}" x2="${xb}" y2="${ya}" stroke="#e74c3c" stroke-width="${swI}" stroke-linecap="round" pointer-events="none"/>`);
     }
 
     out.push(`</g>`);
